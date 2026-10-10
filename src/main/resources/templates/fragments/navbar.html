@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <div th:fragment="navbar">
+        <nav class="navbar navbar-expand-lg navbar-dark py-2 shadow-sm" style="background-color: #0f172a; border-bottom: 2px solid #334155;">
+            <div class="container-fluid px-4">
+                <!-- System Brand -->
+                <a class="navbar-brand d-flex align-items-center" th:href="@{/complaints}">
+                    <i class="bi bi-shield-shaded text-warning fs-3 me-2"></i>
+                    <div>
+                        <span class="fw-bold tracking-wide text-white">CYBERCRIME INVESTIGATION &amp; INTELLIGENCE GRID</span>
+                        <div class="text-secondary small text-uppercase" style="font-size: 0.65rem; letter-spacing: 1.5px;">Unified Command Terminal &bull; Localhost:8080</div>
+                    </div>
+                </a>
+
+                <!-- Workspace Switcher Tabs -->
+                <div class="collapse navbar-collapse" id="globalNav">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                        <!-- Tab 1: Case Desk -->
+                        <li class="nav-item me-2">
+                            <a class="nav-link px-3 py-2 rounded-2 fw-semibold d-flex align-items-center" 
+                               th:classappend="${activeWorkspace == 'cases' ? 'active bg-primary text-white shadow-sm' : 'text-slate-300'}"
+                               th:href="@{/complaints}">
+                                <i class="bi bi-briefcase-fill me-2"></i> Workspace 1: Case Desk
+                            </a>
+                        </li>
+                        <!-- Tab 2: Intelligence Hub -->
+                        <li class="nav-item">
+                            <a class="nav-link px-3 py-2 rounded-2 fw-semibold d-flex align-items-center" 
+                               th:classappend="${activeWorkspace == 'intelligence' ? 'active bg-warning text-dark shadow-sm' : 'text-slate-300'}"
+                               th:href="@{/intelligence}">
+                                <i class="bi bi-cpu-fill me-2"></i> Workspace 2: Intelligence Hub
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Quick Action & DB Console Links -->
+                    <div class="d-flex align-items-center gap-2">
+                        <a class="btn btn-warning btn-sm fw-bold text-dark px-3 shadow-sm" th:href="@{/complaints/register}">
+                            <i class="bi bi-plus-circle-fill me-1"></i> Register New Complaint
+                        </a>
+                        <a class="btn btn-outline-secondary btn-sm text-light border-secondary" th:href="@{/h2-console}" target="_blank" title="Open H2 Database Console">
+                            <i class="bi bi-database"></i> H2 DB
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </div>
+</body>
+</html>

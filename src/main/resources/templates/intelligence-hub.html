@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace 2: AI Intelligence &amp; Threat Telemetry Hub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        .badge-critical { background-color: #dc2626 !important; color: white; }
+        .badge-high { background-color: #f59e0b !important; color: black; }
+        .badge-medium { background-color: #06b6d4 !important; color: black; }
+        .badge-low { background-color: #64748b !important; color: white; }
+        .sandbox-card {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #ffffff;
+            border-left: 5px solid #eab308;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Persistent Global Navigation Bar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid px-4 py-4">
+        <!-- Workspace Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1"><i class="bi bi-cpu-fill text-warning me-2"></i>Workspace 2: AI Intelligence &amp; Threat Telemetry Hub</h3>
+                <p class="text-muted mb-0">Deterministic &amp; Explainable AI Triage Sandbox, Master Historical Dataset Explorer, and Live IoC Correlation Playground</p>
+            </div>
+            <div>
+                <span class="badge bg-success py-2 px-3 fs-6"><i class="bi bi-check-circle me-1"></i> Engine Active on Localhost:8080</span>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- 1. Interactive AI Triage Sandbox -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-dark text-white py-3">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-sliders text-warning me-2"></i>Interactive AI Triage Sandbox</h6>
+                        <small class="text-light text-opacity-75">Test text classification, heuristic priority, and XAI explainability</small>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/intelligence}" method="get">
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-muted">TEST INCIDENT NARRATIVE STATEMENT</label>
+                                <textarea name="testNarrative" class="form-control" rows="3" 
+                                          placeholder="Enter test narrative (e.g. AnyDesk remote screen share refund scam, or SBI netbanking phishing URL password OTP theft...)" 
+                                          th:text="${testNarrative} ?: 'Received call claiming electricity bill KYC expired. Asked to install AnyDesk for refund and transfer funds via UPI.'"></textarea>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">LOSS AMOUNT (INR)</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" step="0.01" name="testLoss" class="form-control" 
+                                               th:value="${testLoss} ?: 600000.0">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-muted">SUSPECT IDENTIFIER (IOC)</label>
+                                    <input type="text" name="testSuspect" class="form-control form-control-sm" 
+                                           placeholder="e.g. refund-desk@ybl" th:value="${testSuspect} ?: 'refund-desk@ybl'">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-sm w-100 fw-bold text-dark">
+                                <i class="bi bi-play-circle me-1"></i> Execute AI Triage Simulation
+                            </button>
+                        </form>
+
+                        <!-- Live Sandbox Output Card -->
+                        <div th:if="${testAnalysis}" class="sandbox-card p-3 mt-3 shadow-sm">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-dark text-warning border border-warning">SIMULATION RESULT</span>
+                                <span class="small text-light">
+                                    Confidence: <strong class="text-warning" th:text="${#numbers.formatDecimal(testAnalysis.confidenceScore * 100, 1, 1) + '%'}">94.0%</strong>
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0 fw-bold text-white">
+                                    Category: <span class="text-info" th:text="${testAnalysis.category}">FINANCIAL_FRAUD</span>
+                                </h6>
+                                <span th:if="${testAnalysis.priorityLevel == 'CRITICAL'}" class="badge badge-critical">CRITICAL</span>
+                                <span th:if="${testAnalysis.priorityLevel == 'HIGH'}" class="badge badge-high">HIGH</span>
+                                <span th:if="${testAnalysis.priorityLevel == 'MEDIUM'}" class="badge badge-medium">MEDIUM</span>
+                                <span th:if="${testAnalysis.priorityLevel == 'LOW'}" class="badge badge-low">LOW</span>
+                            </div>
+                            <div class="small border-top border-secondary pt-2 mt-2">
+                                <strong class="text-warning">Explainability Factors (aiKeyFactors):</strong>
+                                <p class="mb-0 text-light text-opacity-90 mt-1" th:text="${testAnalysis.keyFactors}">Rationale...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Live IoC Correlation Tester -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-dark text-white py-3">
+                        <h6 class="mb-0 fw-bold"><i class="bi bi-search text-warning me-2"></i>Live IoC &amp; Pattern Correlation Tester</h6>
+                        <small class="text-light text-opacity-75">Cross-reference any phone/UPI against pre-seeded syndicates</small>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/intelligence}" method="get" class="mb-3">
+                            <div class="input-group">
+                                <input type="text" name="queryIoC" class="form-control" 
+                                       placeholder="Enter suspect phone, UPI, or handle (e.g. refund-desk@ybl, +91-9876543210, fastcrypto@paytm)" 
+                                       th:value="${queryIoC} ?: 'refund-desk@ybl'">
+                                <button type="submit" class="btn btn-primary fw-semibold">
+                                    <i class="bi bi-search me-1"></i> Query Database
+                                </button>
+                            </div>
+                        </form>
+
+                        <div th:if="${correlations != null}">
+                            <h6 class="fw-bold small text-muted text-uppercase mb-2">
+                                Query Matches: <span class="badge bg-secondary" th:text="${#lists.size(correlations)}">0</span>
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Historical Case</th>
+                                            <th>Matched Identifier</th>
+                                            <th>Score</th>
+                                            <th>Reasoning</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:if="${#lists.isEmpty(correlations)}">
+                                            <td colspan="4" class="text-center py-3 text-muted">No historical linkages found for this query.</td>
+                                        </tr>
+                                        <tr th:each="corr : ${correlations}">
+                                            <td class="fw-bold text-primary" th:text="${corr.historicalCaseId}">HC-2024-8801</td>
+                                            <td><code class="text-danger fw-bold" th:text="${corr.matchedIdentifier}">Identifier</code></td>
+                                            <td>
+                                                <span class="badge" 
+                                                      th:classappend="${corr.similarityPercentage >= 90 ? 'bg-danger' : 'bg-warning text-dark'}"
+                                                      th:text="${corr.similarityPercentage + '%'}">95%</span>
+                                            </td>
+                                            <td class="small text-secondary" th:text="${corr.explanation}">Reasoning</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div th:if="${correlations == null}" class="p-4 bg-light rounded text-center text-muted border">
+                            <i class="bi bi-diagram-3 fs-2 d-block mb-2"></i>
+                            Input an IoC identifier above to test live historical syndicate matching.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Pre-Seeded Master Historical Dataset Explorer -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-database-check text-warning me-2"></i>Pre-Seeded Historical Incident Dataset Explorer</h6>
+                    <small class="text-light text-opacity-75">8+ ground-truth historical records used for automated pattern correlation</small>
+                </div>
+                <span class="badge bg-primary" th:text="${#lists.size(historicalCases) + ' Master Records'}">8 Records</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Case ID</th>
+                                <th>Suspect Identifier (IoC)</th>
+                                <th>Crime Category</th>
+                                <th>Priority</th>
+                                <th>Loss (INR)</th>
+                                <th>Modus Operandi / Threat Narrative</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="h : ${historicalCases}">
+                                <td class="fw-bold text-dark" th:text="${h.caseId}">HC-2024-8801</td>
+                                <td><code class="text-danger fw-bold" th:text="${h.suspectIdentifier}">Identifier</code></td>
+                                <td><span class="badge bg-secondary" th:text="${h.category}">CATEGORY</span></td>
+                                <td>
+                                    <span th:if="${h.priorityLevel == 'CRITICAL'}" class="badge badge-critical">CRITICAL</span>
+                                    <span th:if="${h.priorityLevel == 'HIGH'}" class="badge badge-high">HIGH</span>
+                                    <span th:if="${h.priorityLevel == 'MEDIUM'}" class="badge badge-medium">MEDIUM</span>
+                                    <span th:if="${h.priorityLevel == 'LOW'}" class="badge badge-low">LOW</span>
+                                </td>
+                                <td class="fw-semibold">₹ <span th:text="${#numbers.formatDecimal(h.lossAmount, 1, 'COMMA', 2, 'POINT')}">0.00</span></td>
+                                <td class="small text-secondary" th:text="${h.scamNarrative}">Modus Operandi...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace 1: Case &amp; Investigation Desk</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+        .badge-critical { background-color: #dc2626 !important; color: white; }
+        .badge-high { background-color: #f59e0b !important; color: black; }
+        .badge-medium { background-color: #06b6d4 !important; color: black; }
+        .badge-low { background-color: #64748b !important; color: white; }
+        .card-kpi { border-left: 4px solid; }
+    </style>
+</head>
+<body>
+    <!-- Persistent Global Navigation Bar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid px-4 py-4">
+        <!-- Toast message -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span th:text="${successMessage}">Success!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1"><i class="bi bi-folder2-open text-primary me-2"></i>Workspace 1: Case &amp; Investigation Desk</h3>
+                <p class="text-muted mb-0">Active complaints repository, triage priority badges, and case dossiers</p>
+            </div>
+            <a th:href="@{/complaints/register}" class="btn btn-primary fw-semibold shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i> Register New Complaint
+            </a>
+        </div>
+
+        <!-- 4 KPI Macro Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 card-kpi border-primary p-3 bg-white">
+                    <div class="text-muted small text-uppercase fw-semibold">Total Case Files</div>
+                    <div class="fs-2 fw-bold text-dark" th:text="${totalCases}">0</div>
+                    <span class="badge bg-light text-primary border">All Registered</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 card-kpi border-danger p-3 bg-white">
+                    <div class="text-muted small text-uppercase fw-semibold">Monitored Loss (INR)</div>
+                    <div class="fs-3 fw-bold text-danger">₹ <span th:text="${#numbers.formatDecimal(totalLoss, 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">Financial Impact</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 card-kpi border-warning p-3 bg-white">
+                    <div class="text-muted small text-uppercase fw-semibold">Critical Threat Queue</div>
+                    <div class="fs-2 fw-bold text-dark" th:text="${criticalCases}">0</div>
+                    <span class="badge badge-critical">Loss &gt; ₹5L / Multi-Vector</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card shadow-sm border-0 card-kpi border-info p-3 bg-white">
+                    <div class="text-muted small text-uppercase fw-semibold">Under Investigation</div>
+                    <div class="fs-2 fw-bold text-dark" th:text="${underInvestigation}">0</div>
+                    <span class="badge bg-info text-dark">Active Workflows</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body py-3">
+                <form th:action="@{/complaints}" method="get" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold text-muted">SEARCH COMPLAINT ID / NAME / PHONE</label>
+                        <input type="text" name="search" class="form-control" placeholder="Search case ref, citizen name, phone..." th:value="${search}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold text-muted">AI PRIORITY FILTER</label>
+                        <select name="priority" class="form-select">
+                            <option value="" th:selected="${selectedPriority == ''}">All Priorities</option>
+                            <option value="CRITICAL" th:selected="${selectedPriority == 'CRITICAL'}">CRITICAL</option>
+                            <option value="HIGH" th:selected="${selectedPriority == 'HIGH'}">HIGH</option>
+                            <option value="MEDIUM" th:selected="${selectedPriority == 'MEDIUM'}">MEDIUM</option>
+                            <option value="LOW" th:selected="${selectedPriority == 'LOW'}">LOW</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold text-muted">WORKFLOW STATUS</label>
+                        <select name="status" class="form-select">
+                            <option value="" th:selected="${selectedStatus == ''}">All Statuses</option>
+                            <option value="NEW" th:selected="${selectedStatus == 'NEW'}">NEW</option>
+                            <option value="ASSIGNED" th:selected="${selectedStatus == 'ASSIGNED'}">ASSIGNED</option>
+                            <option value="UNDER_INVESTIGATION" th:selected="${selectedStatus == 'UNDER_INVESTIGATION'}">UNDER_INVESTIGATION</option>
+                            <option value="RESOLVED" th:selected="${selectedStatus == 'RESOLVED'}">RESOLVED</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i> Filter</button>
+                        <a th:href="@{/complaints}" class="btn btn-outline-secondary">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Complaints Table -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Case Number</th>
+                                <th>Complainant</th>
+                                <th>Category</th>
+                                <th>AI Priority</th>
+                                <th>Loss Amount</th>
+                                <th>Status</th>
+                                <th>Assigned Officer</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(complaints)}">
+                                <td colspan="8" class="text-center py-4 text-muted">No complaints match search parameters.</td>
+                            </tr>
+                            <tr th:each="c : ${complaints}">
+                                <td>
+                                    <a th:href="@{/complaints/{id}(id=${c.id})}" class="fw-bold text-primary text-decoration-none" th:text="${c.complaintNumber}">CC-2024-XXXX</a>
+                                    <div class="small text-muted" th:text="${#temporals.format(c.registeredAt, 'dd-MMM-yyyy')}">Date</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold" th:text="${c.complainantName}">Name</div>
+                                    <small class="text-muted" th:text="${c.contactPhone}">Phone</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary" th:text="${c.aiCategory}">CATEGORY</span>
+                                </td>
+                                <td>
+                                    <span th:if="${c.aiPriority == 'CRITICAL'}" class="badge badge-critical">CRITICAL</span>
+                                    <span th:if="${c.aiPriority == 'HIGH'}" class="badge badge-high">HIGH</span>
+                                    <span th:if="${c.aiPriority == 'MEDIUM'}" class="badge badge-medium">MEDIUM</span>
+                                    <span th:if="${c.aiPriority == 'LOW'}" class="badge badge-low">LOW</span>
+                                </td>
+                                <td class="fw-bold">
+                                    ₹ <span th:text="${#numbers.formatDecimal(c.lossAmount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                                </td>
+                                <td>
+                                    <span class="badge" 
+                                          th:classappend="${c.status == 'NEW' ? 'bg-primary' : (c.status == 'RESOLVED' ? 'bg-success' : 'bg-info')}"
+                                          th:text="${c.status}">STATUS</span>
+                                </td>
+                                <td>
+                                    <span class="small text-muted" th:text="${c.assignedOfficer ?: 'Unassigned'}">Officer</span>
+                                </td>
+                                <td>
+                                    <a th:href="@{/complaints/{id}(id=${c.id})}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye"></i> Open Dossier
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
