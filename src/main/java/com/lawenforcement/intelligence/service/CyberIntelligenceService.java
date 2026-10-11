@@ -197,6 +197,13 @@ public class CyberIntelligenceService {
     /**
      * Case Correlation & Pattern Identification Engine
      */
+    public List<CorrelatedCaseDTO> correlate(String suspectId, String text) {
+        return correlate(CorrelationRequest.builder()
+                .suspectIdentifier(suspectId)
+                .incidentDescription(text)
+                .build());
+    }
+
     public List<CorrelatedCaseDTO> correlate(CorrelationRequest request) {
         String activeSuspect = request.getSuspectIdentifier() != null ? request.getSuspectIdentifier().trim().toLowerCase() : "";
         String activeNarrative = request.getIncidentDescription() != null ? request.getIncidentDescription().toLowerCase() : "";

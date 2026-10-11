@@ -5,50 +5,85 @@
 </head>
 <body>
     <div th:fragment="navbar">
-        <nav class="navbar navbar-expand-lg navbar-dark py-2 shadow-sm" style="background-color: #0f172a; border-bottom: 2px solid #334155;">
-            <div class="container-fluid px-4">
-                <!-- System Brand -->
-                <a class="navbar-brand d-flex align-items-center" th:href="@{/complaints}">
-                    <i class="bi bi-shield-shaded text-warning fs-3 me-2"></i>
-                    <div>
-                        <span class="fw-bold tracking-wide text-white">CYBERCRIME INVESTIGATION &amp; INTELLIGENCE GRID</span>
-                        <div class="text-secondary small text-uppercase" style="font-size: 0.65rem; letter-spacing: 1.5px;">Unified Command Terminal &bull; Localhost:8080</div>
-                    </div>
-                </a>
+        <!-- Natural Scrolling Command Header (No sticky/fixed positioning) -->
+        <header class="border-bottom py-2 px-4 shadow-sm" style="border-bottom: 1px solid var(--bs-border-color) !important;">
+            <div class="container-fluid px-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <!-- Brand / Portal Title -->
+                <div class="d-flex align-items-center gap-3">
+                    <a th:href="@{/dashboard}" class="d-flex align-items-center text-decoration-none">
+                        <span class="badge bg-primary text-uppercase px-2 py-1 me-2 fw-bold">LEO PORTAL</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-shield-shaded text-warning fs-5"></i>
+                            <span class="fw-bold font-monospace text-body" style="letter-spacing: 0.5px;">CYBERCRIME INVESTIGATION &amp; INTELLIGENCE GRID</span>
+                        </div>
+                    </a>
+                </div>
 
-                <!-- Workspace Switcher Tabs -->
-                <div class="collapse navbar-collapse" id="globalNav">
-                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
-                        <!-- Tab 1: Case Desk -->
-                        <li class="nav-item me-2">
-                            <a class="nav-link px-3 py-2 rounded-2 fw-semibold d-flex align-items-center" 
-                               th:classappend="${activeWorkspace == 'cases' ? 'active bg-primary text-white shadow-sm' : 'text-slate-300'}"
-                               th:href="@{/complaints}">
-                                <i class="bi bi-briefcase-fill me-2"></i> Workspace 1: Case Desk
-                            </a>
-                        </li>
-                        <!-- Tab 2: Intelligence Hub -->
-                        <li class="nav-item">
-                            <a class="nav-link px-3 py-2 rounded-2 fw-semibold d-flex align-items-center" 
-                               th:classappend="${activeWorkspace == 'intelligence' ? 'active bg-warning text-dark shadow-sm' : 'text-slate-300'}"
-                               th:href="@{/intelligence}">
-                                <i class="bi bi-cpu-fill me-2"></i> Workspace 2: Intelligence Hub
-                            </a>
-                        </li>
-                    </ul>
+                <!-- Right-Side Controls: Clock, Theme Mode Toggle, Top-Right Workspace Dropdown -->
+                <div class="d-flex align-items-center gap-2 font-monospace small">
+                    <!-- Live Clocks -->
+                    <span id="navIstClock" class="text-warning d-none d-lg-inline">IST: --:--:--</span>
+                    <span id="navUtcClock" class="text-secondary me-2">UTC: --:--:--</span>
 
-                    <!-- Quick Action & DB Console Links -->
-                    <div class="d-flex align-items-center gap-2">
-                        <a class="btn btn-warning btn-sm fw-bold text-dark px-3 shadow-sm" th:href="@{/complaints/register}">
-                            <i class="bi bi-plus-circle-fill me-1"></i> Register New Complaint
-                        </a>
-                        <a class="btn btn-outline-secondary btn-sm text-light border-secondary" th:href="@{/h2-console}" target="_blank" title="Open H2 Database Console">
-                            <i class="bi bi-database"></i> H2 DB
-                        </a>
+                    <!-- Technical Mode Toggle Button -->
+                    <button id="themeModeToggle" class="btn btn-outline-secondary font-monospace small px-2 py-1" type="button" title="Toggle Tactical Theme">
+                        <span id="themeModeLabel">[MODE: DARK]</span>
+                    </button>
+
+                    <!-- Top-Right Workspace Select Dropdown -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2 px-2 py-1" 
+                                type="button" id="workspaceSelectMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="font-monospace small">VIEW SELECT</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="workspaceSelectMenu">
+                            <li><a class="dropdown-item py-2" th:href="@{/dashboard#ledgerSection}">1. Active Case Ledger</a></li>
+                            <li><a class="dropdown-item py-2" th:href="@{/dashboard#intakeSection}">2. Register New Complaint</a></li>
+                            <li><a class="dropdown-item py-2" th:href="@{/dashboard#sandboxSection}">3. Intelligence &amp; IoC Sandbox</a></li>
+                        </ul>
                     </div>
                 </div>
             </div>
-        </nav>
+        </header>
+
+        <script>
+            (function() {
+                // Live Clocks
+                function updateNavClock() {
+                    const now = new Date();
+                    const ist = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
+                    const utc = now.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour12: false });
+                    const istEl = document.getElementById('navIstClock');
+                    const utcEl = document.getElementById('navUtcClock');
+                    if (istEl) istEl.innerText = 'IST: ' + ist;
+                    if (utcEl) utcEl.innerText = 'UTC: ' + utc;
+                }
+                setInterval(updateNavClock, 1000);
+                updateNavClock();
+
+                // Technical Theme Mode Toggle Logic
+                const themeToggle = document.getElementById('themeModeToggle');
+                const themeLabel = document.getElementById('themeModeLabel');
+                const activeTheme = localStorage.getItem('app-theme') || 'dark';
+
+                document.documentElement.setAttribute('data-bs-theme', activeTheme);
+                if (themeLabel) {
+                    themeLabel.textContent = activeTheme === 'dark' ? '[MODE: DARK]' : '[MODE: LIGHT]';
+                }
+
+                if (themeToggle) {
+                    themeToggle.addEventListener('click', () => {
+                        const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+                        const target = current === 'dark' ? 'light' : 'dark';
+                        document.documentElement.setAttribute('data-bs-theme', target);
+                        localStorage.setItem('app-theme', target);
+                        if (themeLabel) {
+                            themeLabel.textContent = target === 'dark' ? '[MODE: DARK]' : '[MODE: LIGHT]';
+                        }
+                    });
+                }
+            })();
+        </script>
     </div>
 </body>
 </html>

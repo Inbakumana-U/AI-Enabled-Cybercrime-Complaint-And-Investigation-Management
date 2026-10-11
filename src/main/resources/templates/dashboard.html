@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>National Cybercrime Triage &amp; Investigation Operations Grid</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        .kpi-block {
+            border-right: 1px solid var(--bs-border-color);
+            padding: 0.85rem 1.25rem;
+        }
+        .kpi-block:last-child {
+            border-right: none;
+        }
+        .badge-critical { background-color: #dc2626 !important; color: white; }
+        .badge-high { background-color: #ea580c !important; color: white; }
+        .badge-medium { background-color: #0284c7 !important; color: white; }
+        .badge-low { background-color: #475569 !important; color: white; }
+        .sandbox-panel {
+            border-left: 5px solid #eab308;
+            border-radius: 8px;
+        }
+        .ticker-bar {
+            background-color: rgba(220, 38, 38, 0.15);
+            border-bottom: 1px solid rgba(220, 38, 38, 0.3);
+            color: #fca5a5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ========================================================================= -->
+    <!-- NATURAL SCROLLING COMMAND HEADER (NO STICKY / NO PINNING)                 -->
+    <!-- ========================================================================= -->
+    <header class="border-bottom py-2 px-4 shadow-sm" style="border-bottom: 1px solid var(--bs-border-color) !important;">
+        <div class="container-fluid px-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <!-- Brand / Grid Title -->
+            <div class="d-flex align-items-center gap-3">
+                <a th:href="@{/dashboard}" class="d-flex align-items-center text-decoration-none">
+                    <span class="badge bg-primary text-uppercase px-2 py-1 me-2 fw-bold">LEO PORTAL</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-shaded text-warning fs-5"></i>
+                        <span class="fw-bold font-monospace text-body" style="letter-spacing: 0.5px;">CYBERCRIME INVESTIGATION &amp; INTELLIGENCE GRID</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Right-Side Controls: Clock, Theme Mode Toggle, Top-Right Workspace Dropdown -->
+            <div class="d-flex align-items-center gap-2 font-monospace small">
+                <!-- System Status Indicator & Clocks -->
+                <span class="text-success d-none d-md-flex align-items-center gap-1 me-2">
+                    <span class="spinner-grow spinner-grow-sm text-success" style="width: 0.5rem; height: 0.5rem;"></span>
+                    ONLINE
+                </span>
+                <span id="navIstClock" class="text-warning d-none d-lg-inline">IST: --:--:--</span>
+                <span id="navUtcClock" class="text-secondary me-2">UTC: --:--:--</span>
+
+                <!-- Technical Mode Toggle Button -->
+                <button id="themeModeToggle" class="btn btn-outline-secondary font-monospace small px-2 py-1" type="button" title="Toggle Tactical Theme">
+                    <span id="themeModeLabel">[MODE: DARK]</span>
+                </button>
+
+                <!-- Top-Right Workspace Select Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2 px-2 py-1" 
+                            type="button" id="workspaceSelectMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="font-monospace small">VIEW SELECT</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="workspaceSelectMenu">
+                        <li><a class="dropdown-item py-2" href="#ledgerSection">1. Active Case Ledger</a></li>
+                        <li><a class="dropdown-item py-2" href="#intakeSection">2. Register New Complaint</a></li>
+                        <li><a class="dropdown-item py-2" href="#sandboxSection">3. Intelligence &amp; IoC Sandbox</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================================================= -->
+    <!-- TOP SECTION: EXECUTIVE METRIC & ALERT SUMMARY STRIP (FULL WIDTH)          -->
+    <!-- ========================================================================= -->
+    <section class="border-bottom py-2 px-4 shadow-sm" style="background-color: var(--bs-tertiary-bg); border-bottom: 1px solid var(--bs-border-color) !important;">
+        <div class="row g-0 align-items-center">
+            <div class="col-6 col-md-3 kpi-block">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase small text-secondary fw-semibold" style="font-size: 0.7rem;">TOTAL CASES</div>
+                        <div class="fs-4 fw-bold text-body mb-0" th:text="${totalCases}">0</div>
+                    </div>
+                    <div class="fs-3 text-primary opacity-50"><i class="bi bi-folder-check"></i></div>
+                </div>
+                <div class="small text-secondary" style="font-size: 0.75rem;">
+                    <span class="text-info fw-semibold" th:text="${underInvestigation}">0</span> under active investigation
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3 kpi-block">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase small text-secondary fw-semibold" style="font-size: 0.7rem;">TOTAL LOSS (INR)</div>
+                        <div class="fs-4 fw-bold text-danger mb-0">₹ <span th:text="${#numbers.formatDecimal(totalLoss, 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+                    </div>
+                    <div class="fs-3 text-danger opacity-50"><i class="bi bi-currency-rupee"></i></div>
+                </div>
+                <div class="small text-secondary" style="font-size: 0.75rem;">
+                    <span class="text-danger fw-semibold" th:text="${criticalCases}">0</span> Critical Cases (&gt; ₹5L)
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3 kpi-block">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase small text-secondary fw-semibold" style="font-size: 0.7rem;">HIGH-ALERT SYNDICATES</div>
+                        <div class="fs-4 fw-bold text-warning mb-0" th:text="${muleAccountsCount}">0</div>
+                    </div>
+                    <div class="fs-3 text-warning opacity-50"><i class="bi bi-exclamation-triangle"></i></div>
+                </div>
+                <div class="small text-secondary" style="font-size: 0.75rem;">
+                    High-Velocity Mules &amp; Multi-State Entities
+                </div>
+            </div>
+
+            <div class="col-6 col-md-3 kpi-block">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase small text-secondary fw-semibold" style="font-size: 0.7rem;">FREEZE REQUESTS PENDING</div>
+                        <div class="fs-4 fw-bold text-info mb-0" th:text="${pendingFreezesCount}">0</div>
+                    </div>
+                    <div class="fs-3 text-info opacity-50"><i class="bi bi-shield-x"></i></div>
+                </div>
+                <div class="small text-secondary" style="font-size: 0.75rem;">
+                    1930 Bank Lien Notices in Pipeline
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LIVE ALERT TICKER / BANNER (FULL WIDTH) -->
+    <div th:if="${unacknowledgedAlerts > 0}" class="ticker-bar px-4 py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-danger px-2 py-1"><i class="bi bi-bell-fill me-1"></i> CRITICAL ESCALATION</span>
+            <span class="small text-light">
+                <strong class="text-warning" th:text="${unacknowledgedAlerts}">1</strong> unacknowledged escalation alerts pending:
+            </span>
+            <span class="small text-white fw-bold" th:text="${activeAlerts[0].alertMessage}">Alert message</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a th:href="@{/complaints/{id}(id=${activeAlerts[0].complaintId})}" class="btn btn-outline-light btn-sm py-0">Review Case</a>
+            <form th:action="@{/alerts/{alertId}/acknowledge(alertId=${activeAlerts[0].id})}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-warning btn-sm py-0 text-dark fw-semibold">Acknowledge</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FLASH SUCCESS MESSAGE -->
+    <div class="container-fluid px-4 pt-3" th:if="${successMessage}">
+        <div class="alert alert-success alert-dismissible fade show bg-success bg-opacity-25 border-success py-2" role="alert">
+            <i class="bi bi-check-circle-fill me-2 text-warning"></i>
+            <span th:text="${successMessage}">Success!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MAIN WORKSPACE: STRICT LINEAR DOWNWARD STACKING (FULL-WIDTH COL-12)       -->
+    <!-- ========================================================================= -->
+    <main class="container-fluid px-4 py-3">
+        <div class="row g-4">
+
+            <!-- ================================================================= -->
+            <!-- SECTION 1: ACTIVE CASE LEDGER & TRIAGE TABLE (#ledgerSection)     -->
+            <!-- ================================================================= -->
+            <div id="ledgerSection" class="col-12">
+                <div class="card shadow-sm border">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-3" style="background-color: var(--bs-tertiary-bg);">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-folder2-open text-primary fs-5"></i>
+                            <h5 class="mb-0 fw-bold">1. Active Case Ledger &amp; Rapid Triage</h5>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary" th:text="${#lists.size(complaints) + ' Cases Listed'}">0 Cases</span>
+                            <a href="#intakeSection" class="btn btn-sm btn-outline-warning">
+                                <i class="bi bi-plus-circle me-1"></i> + New Case
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-3">
+                        <!-- Filters Form -->
+                        <form th:action="@{/dashboard}" method="get" class="row g-2 mb-3 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold text-secondary">SEARCH CASE REF / CITIZEN / PHONE</label>
+                                <input type="text" name="search" class="form-control form-control-sm" 
+                                       placeholder="Search case ref, complainant name, phone..." th:value="${search}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold text-secondary">AI PRIORITY FILTER</label>
+                                <select name="priority" class="form-select form-select-sm">
+                                    <option value="" th:selected="${selectedPriority == ''}">All Priorities</option>
+                                    <option value="CRITICAL" th:selected="${selectedPriority == 'CRITICAL'}">CRITICAL</option>
+                                    <option value="HIGH" th:selected="${selectedPriority == 'HIGH'}">HIGH</option>
+                                    <option value="MEDIUM" th:selected="${selectedPriority == 'MEDIUM'}">MEDIUM</option>
+                                    <option value="LOW" th:selected="${selectedPriority == 'LOW'}">LOW</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold text-secondary">INVESTIGATION STATUS</label>
+                                <select name="status" class="form-select form-select-sm">
+                                    <option value="" th:selected="${selectedStatus == ''}">All Statuses</option>
+                                    <option value="NEW" th:selected="${selectedStatus == 'NEW'}">NEW</option>
+                                    <option value="ASSIGNED" th:selected="${selectedStatus == 'ASSIGNED'}">ASSIGNED</option>
+                                    <option value="UNDER_INVESTIGATION" th:selected="${selectedStatus == 'UNDER_INVESTIGATION'}">UNDER_INVESTIGATION</option>
+                                    <option value="ESCALATED" th:selected="${selectedStatus == 'ESCALATED'}">ESCALATED</option>
+                                    <option value="RESOLVED" th:selected="${selectedStatus == 'RESOLVED'}">RESOLVED</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bi bi-funnel me-1"></i> Filter</button>
+                                <a th:href="@{/dashboard#ledgerSection}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                            </div>
+                        </form>
+
+                        <!-- Full Width Complaints Table -->
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Case Ref</th>
+                                        <th>Complainant</th>
+                                        <th>Category</th>
+                                        <th>AI Priority</th>
+                                        <th>Loss Amount</th>
+                                        <th>Suspect Handle</th>
+                                        <th>Status</th>
+                                        <th>Assigned Officer</th>
+                                        <th>Quick Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(complaints)}">
+                                        <td colspan="9" class="text-center py-4 text-secondary">No complaints match search criteria.</td>
+                                    </tr>
+                                    <tr th:each="c : ${complaints}">
+                                        <td>
+                                            <a th:href="@{/complaints/{id}(id=${c.id})}" class="fw-bold text-primary text-decoration-none font-monospace" th:text="${c.complaintNumber}">CC-2024-XXXX</a>
+                                            <div class="small text-secondary" th:text="${#temporals.format(c.registeredAt, 'dd-MMM-yyyy')}">Date</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-body" th:text="${c.complainantName}">Name</div>
+                                            <small class="text-secondary" th:text="${c.contactPhone}">Phone</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary bg-opacity-75" th:text="${c.aiCategory}">CATEGORY</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${c.aiPriority == 'CRITICAL'}" class="badge badge-critical">CRITICAL</span>
+                                            <span th:if="${c.aiPriority == 'HIGH'}" class="badge badge-high">HIGH</span>
+                                            <span th:if="${c.aiPriority == 'MEDIUM'}" class="badge badge-medium">MEDIUM</span>
+                                            <span th:if="${c.aiPriority == 'LOW'}" class="badge badge-low">LOW</span>
+                                        </td>
+                                        <td class="fw-bold text-danger">
+                                            ₹ <span th:text="${#numbers.formatDecimal(c.lossAmount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                                        </td>
+                                        <td>
+                                            <code class="text-warning small" th:text="${c.suspectIdentifier ?: 'None'}">handle</code>
+                                        </td>
+                                        <td>
+                                            <span class="badge" 
+                                                  th:classappend="${c.status == 'NEW' ? 'bg-primary' : (c.status == 'RESOLVED' ? 'bg-success' : (c.status == 'ESCALATED' ? 'bg-danger' : 'bg-info'))}"
+                                                  th:text="${c.status}">STATUS</span>
+                                        </td>
+                                        <td>
+                                            <span class="small text-secondary" th:text="${c.assignedOfficer ?: 'Unassigned'}">Officer</span>
+                                        </td>
+                                        <td>
+                                            <a th:href="@{/complaints/{id}(id=${c.id})}" class="btn btn-outline-primary btn-sm py-0">
+                                                <i class="bi bi-file-earmark-text me-1"></i> View Full Dossier
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1930 Financial Fraud Quick Watchlist (Full Width) -->
+                <div class="card shadow-sm border mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2" style="background-color: var(--bs-tertiary-bg);">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-bank text-warning fs-5"></i>
+                            <h6 class="mb-0 fw-bold">Financial Fraud &amp; 1930 Transaction Freeze Watchlist</h6>
+                        </div>
+                        <span class="badge bg-danger" th:text="${#lists.size(recentTransactions) + ' Transactions Logged'}">0 Logs</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Transaction Ref</th>
+                                        <th>Amount (INR)</th>
+                                        <th>Sender</th>
+                                        <th>Beneficiary / VPA</th>
+                                        <th>Velocity Status</th>
+                                        <th>Freeze Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(recentTransactions)}">
+                                        <td colspan="7" class="text-center py-3 text-secondary">No transactions monitored.</td>
+                                    </tr>
+                                    <tr th:each="txn : ${recentTransactions}">
+                                        <td class="fw-bold font-monospace text-primary" th:text="${txn.transactionReference}">TXN-01</td>
+                                        <td class="fw-bold text-danger">₹ <span th:text="${#numbers.formatDecimal(txn.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></td>
+                                        <td class="small text-secondary" th:text="${txn.senderAccount}">Sender</td>
+                                        <td>
+                                            <code class="text-warning fw-bold" th:text="${txn.beneficiaryAccount}">VPA</code>
+                                            <div class="small text-secondary" th:text="${txn.beneficiaryBankOrVpa}">Bank</div>
+                                        </td>
+                                        <td>
+                                            <span th:if="${txn.velocityTag == 'HIGH_VELOCITY_MULE_ACCOUNT'}" class="badge bg-danger">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> HIGH_VELOCITY_MULE
+                                            </span>
+                                            <span th:if="${txn.velocityTag != 'HIGH_VELOCITY_MULE_ACCOUNT'}" class="badge bg-secondary">STANDARD</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${txn.transactionStatus == 'FLAGGED'}" class="badge bg-warning text-dark">FLAGGED</span>
+                                            <span th:if="${txn.transactionStatus == 'FREEZE_REQUESTED'}" class="badge bg-info text-dark">FREEZE_REQUESTED</span>
+                                            <span th:if="${txn.transactionStatus == 'FROZEN'}" class="badge bg-success">FROZEN</span>
+                                            <span th:if="${txn.transactionStatus == 'ESCALATED'}" class="badge bg-danger">ESCALATED</span>
+                                        </td>
+                                        <td>
+                                            <form th:if="${txn.transactionStatus == 'FLAGGED'}" th:action="@{/transactions/{txnId}/freeze(txnId=${txn.id})}" method="post" class="d-inline">
+                                                <input type="hidden" name="complaintId" th:value="${txn.complaintId}">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm py-0">
+                                                    <i class="bi bi-shield-x me-1"></i> 1930 Bank Freeze
+                                                </button>
+                                            </form>
+                                            <span th:if="${txn.transactionStatus != 'FLAGGED'}" class="small text-secondary">Lien Notice Dispatched</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- SECTION 2: COMPLAINT INTAKE & REGISTRATION FORM (#intakeSection)  -->
+            <!-- ================================================================= -->
+            <div id="intakeSection" class="col-12">
+                <div class="card shadow-sm border">
+                    <div class="card-header d-flex justify-content-between align-items-center py-3" style="background-color: var(--bs-tertiary-bg);">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-file-earmark-plus text-success fs-5"></i>
+                            <h5 class="mb-0 fw-bold">2. Complaint Intake &amp; Registration Form (AI Rapid Triage)</h5>
+                        </div>
+                        <span class="badge bg-primary">Section 65B Certified Ingestion</span>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <form th:action="@{/complaints/register}" th:object="${newComplaint}" method="post">
+                            
+                            <!-- Complainant Identity -->
+                            <div class="p-3 mb-4 rounded border" style="background-color: var(--bs-tertiary-bg);">
+                                <h6 class="fw-bold text-primary mb-3">
+                                    <i class="bi bi-person-badge me-2"></i>1. Complainant Identity
+                                </h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="complainantName" class="form-label small fw-semibold text-secondary">COMPLAINANT FULL NAME <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="complainantName" th:field="*{complainantName}" 
+                                               placeholder="e.g. Ramesh Chandra" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="contactPhone" class="form-label small fw-semibold text-secondary">PRIMARY CONTACT PHONE <span class="text-danger">*</span></label>
+                                        <input type="tel" class="form-control" id="contactPhone" th:field="*{contactPhone}" 
+                                               placeholder="e.g. 9876543210" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Incident Statement & Digital Handles -->
+                            <div class="p-3 mb-4 rounded border" style="background-color: var(--bs-tertiary-bg);">
+                                <h6 class="fw-bold text-primary mb-3">
+                                    <i class="bi bi-shield-exclamation me-2"></i>2. Citizen Statement &amp; Digital Handles
+                                </h6>
+                                <div class="mb-3">
+                                    <label for="incidentDescription" class="form-label small fw-semibold text-secondary">
+                                        INCIDENT NARRATIVE STATEMENT <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea class="form-control" id="incidentDescription" th:field="*{incidentDescription}" rows="4" 
+                                              placeholder="Detailed incident narrative (e.g. Caller claimed electricity power would be cut tonight due to unpaid bill. Instructed victim to install QuickSupport and transfer ₹1,50,000 via UPI to electricity-bill@paytm)..." required></textarea>
+                                    <div class="small text-secondary mt-1">
+                                        <i class="bi bi-cpu text-warning me-1"></i> The AI engine parses text IoCs (e.g. OTP, APK, Telegram, AnyDesk, crypto, investment) to infer crime category and confidence score.
+                                    </div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="lossAmount" class="form-label small fw-semibold text-secondary">FINANCIAL LOSS (INR) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">₹</span>
+                                            <input type="number" step="0.01" class="form-control" id="lossAmount" th:field="*{lossAmount}" 
+                                                   placeholder="0.00" required>
+                                        </div>
+                                        <div class="small text-secondary mt-1">Losses &gt; ₹5,00,000 trigger automated <code>CRITICAL_RED</code> lien notices.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="suspectIdentifier" class="form-label small fw-semibold text-secondary">SUSPECT DIGITAL HANDLE (UPI / PHONE / URL)</label>
+                                        <input type="text" class="form-control" id="suspectIdentifier" th:field="*{suspectIdentifier}" 
+                                               placeholder="e.g. refund-desk@ybl or +91-9876543210">
+                                        <div class="small text-secondary mt-1">Cross-referenced against historical incident records for syndicate linkage.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="d-flex justify-content-end align-items-center pt-2">
+                                <button type="submit" class="btn btn-primary px-4 py-2 fw-bold shadow">
+                                    <i class="bi bi-robot me-2 text-warning"></i>Instant Submit &amp; Run AI Assessment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================= -->
+            <!-- SECTION 3: AI INTELLIGENCE & IOC SANDBOX (#sandboxSection)        -->
+            <!-- ================================================================= -->
+            <div id="sandboxSection" class="col-12">
+                
+                <!-- 3A. Real-Time Triage Form Container (Full Width) -->
+                <div class="card shadow-sm border mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center py-3" style="background-color: var(--bs-tertiary-bg);">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-sliders text-warning fs-5"></i>
+                            <h5 class="mb-0 fw-bold">3. AI Intelligence &amp; IoC Sandbox (Real-Time Triage)</h5>
+                        </div>
+                        <span class="badge bg-warning text-dark fw-bold">Live Inference</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <form th:action="@{/dashboard}" method="get">
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary">TEST INCIDENT STATEMENT / NARRATIVE</label>
+                                <textarea name="testNarrative" class="form-control form-control-sm" rows="3" 
+                                          placeholder="Input test scam narrative..."
+                                          th:text="${testNarrative} ?: 'Received fraudulent call regarding electricity bill refund. Asked to install AnyDesk and transfer funds via UPI.'"></textarea>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-secondary">LOSS AMOUNT (INR)</label>
+                                    <input type="number" step="0.01" name="testLoss" class="form-control form-control-sm" 
+                                           th:value="${testLoss} ?: 600000.0">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold text-secondary">SUSPECT IDENTIFIER</label>
+                                    <input type="text" name="testSuspect" class="form-control form-control-sm" 
+                                           th:value="${testSuspect} ?: 'refund-desk@ybl'">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-warning btn-sm fw-bold text-dark shadow-sm">
+                                <i class="bi bi-play-circle-fill me-1"></i> Run On-The-Fly AI Token Classification
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 3B. Explainability and Threat Tokens Container (Directly Below, Full Width) -->
+                <div th:if="${testAnalysis}" class="card shadow-sm border mb-4 sandbox-panel" style="background-color: var(--bs-tertiary-bg);">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span class="badge bg-primary text-uppercase px-2 py-1">AI ASSESSMENT OUTPUT</span>
+                        <span class="small">Confidence: <strong class="text-warning" th:text="${#numbers.formatDecimal(testAnalysis.confidenceScore * 100, 1, 1) + '%'}">94.0%</strong></span>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0 fw-bold">Predicted Category: <span class="text-info" th:text="${testAnalysis.category}">FINANCIAL_FRAUD</span></h6>
+                            <span class="badge badge-critical" th:text="${testAnalysis.priorityLevel}">CRITICAL</span>
+                        </div>
+                        <div class="small border-top pt-2 mt-2">
+                            <strong class="text-warning">XAI Explainability Factors &amp; Threat Tokens:</strong>
+                            <p class="mb-0 small mt-1 text-secondary" th:text="${testAnalysis.keyFactors}">Rationale...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3C. Reverse IoC Lookup Form & Match Results (Full Width) -->
+                <div class="card shadow-sm border mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2" style="background-color: var(--bs-tertiary-bg);">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-search text-info fs-5"></i>
+                            <h6 class="mb-0 fw-bold">Reverse IoC Syndicate Correlator</h6>
+                        </div>
+                        <span class="badge bg-info text-dark fw-bold">Cross-Case Linkage</span>
+                    </div>
+                    <div class="card-body p-3">
+                        <form th:action="@{/dashboard}" method="get" class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary">QUERY SUSPECT UPI / PHONE / CRYPTO / URL</label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" name="queryIoC" class="form-control" 
+                                       placeholder="Enter suspect phone, UPI (e.g. refund-desk@ybl)..." 
+                                       th:value="${queryIoC} ?: 'refund-desk@ybl'">
+                                <button type="submit" class="btn btn-primary fw-semibold">
+                                    <i class="bi bi-search me-1"></i> Query Database
+                                </button>
+                            </div>
+                        </form>
+
+                        <div th:if="${correlations != null}">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small fw-bold text-secondary text-uppercase">Cross-Case Matches:</span>
+                                <span class="badge bg-secondary" th:text="${#lists.size(correlations) + ' Matches'}">0</span>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Historical Case</th>
+                                            <th>Matched IoC</th>
+                                            <th>Confidence</th>
+                                            <th>Legal Reasoning</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:if="${#lists.isEmpty(correlations)}">
+                                            <td colspan="4" class="text-center py-2 text-secondary">No cross-case linkages found for this identifier.</td>
+                                        </tr>
+                                        <tr th:each="corr : ${correlations}">
+                                            <td class="fw-bold text-primary" th:text="${corr.historicalCaseId}">HC-01</td>
+                                            <td><code class="text-danger fw-bold" th:text="${corr.matchedIdentifier}">Identifier</code></td>
+                                            <td><span class="badge bg-danger" th:text="${corr.similarityPercentage + '%'}">95%</span></td>
+                                            <td class="small text-secondary" th:text="${corr.explanation}">Reasoning</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div th:if="${correlations == null}" class="p-3 rounded border text-center text-secondary small">
+                            Query any suspect digital handle above to detect syndicated linkages across multi-state case archives.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3D. Master Historical Dataset Table (Directly Below, Full Width) -->
+                <div class="card shadow-sm border mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2" style="background-color: var(--bs-tertiary-bg);">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-journal-bookmark text-warning fs-5"></i>
+                            <h6 class="mb-0 fw-bold">Master Pre-Seeded Historical Incident Dataset</h6>
+                        </div>
+                        <span class="badge bg-secondary" th:text="${#lists.size(historicalCases) + ' Historical Ground Truth Records'}">8 Records</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Case ID</th>
+                                        <th>Suspect Identifier</th>
+                                        <th>Category</th>
+                                        <th>Priority</th>
+                                        <th>Loss (INR)</th>
+                                        <th>Modus Operandi / Threat Statement</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="h : ${historicalCases}">
+                                        <td class="fw-bold font-monospace text-primary" th:text="${h.caseId}">HC-01</td>
+                                        <td><code class="text-danger fw-bold" th:text="${h.suspectIdentifier}">Identifier</code></td>
+                                        <td><span class="badge bg-secondary" th:text="${h.category}">Category</span></td>
+                                        <td>
+                                            <span th:if="${h.priorityLevel == 'CRITICAL'}" class="badge badge-critical">CRITICAL</span>
+                                            <span th:if="${h.priorityLevel == 'HIGH'}" class="badge badge-high">HIGH</span>
+                                            <span th:if="${h.priorityLevel == 'MEDIUM'}" class="badge badge-medium">MEDIUM</span>
+                                            <span th:if="${h.priorityLevel == 'LOW'}" class="badge badge-low">LOW</span>
+                                        </td>
+                                        <td class="fw-semibold text-danger">₹ <span th:text="${#numbers.formatDecimal(h.lossAmount, 1, 'COMMA', 2, 'POINT')}">0.00</span></td>
+                                        <td class="small text-secondary" th:text="${h.scamNarrative}">Narrative</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Clock & Technical Theme Toggle Script -->
+    <script>
+        (function() {
+            // Live Clocks
+            function updateClock() {
+                const now = new Date();
+                const ist = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false });
+                const utc = now.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour12: false });
+                const istEl = document.getElementById('navIstClock');
+                const utcEl = document.getElementById('navUtcClock');
+                if (istEl) istEl.innerText = 'IST: ' + ist;
+                if (utcEl) utcEl.innerText = 'UTC: ' + utc;
+            }
+            setInterval(updateClock, 1000);
+            updateClock();
+
+            // Technical Theme Toggle Logic
+            const themeToggle = document.getElementById('themeModeToggle');
+            const themeLabel = document.getElementById('themeModeLabel');
+            const activeTheme = localStorage.getItem('app-theme') || 'dark';
+
+            document.documentElement.setAttribute('data-bs-theme', activeTheme);
+            if (themeLabel) {
+                themeLabel.textContent = activeTheme === 'dark' ? '[MODE: DARK]' : '[MODE: LIGHT]';
+            }
+
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
+                    const target = current === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-bs-theme', target);
+                    localStorage.setItem('app-theme', target);
+                    if (themeLabel) {
+                        themeLabel.textContent = target === 'dark' ? '[MODE: DARK]' : '[MODE: LIGHT]';
+                    }
+                });
+            }
+        })();
+    </script>
+</body>
+</html>
