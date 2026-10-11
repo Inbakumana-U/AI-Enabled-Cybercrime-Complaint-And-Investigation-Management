@@ -69,7 +69,14 @@ public class InvestigationWorkflowService {
         complaint.setAiConfidenceScore(analysis.getConfidenceScore());
         complaint.setAiKeyFactors(analysis.getKeyFactors());
 
-        Complaint saved = complaintRepository.save(complaint);
+        if (complaint.getAiPriority() == null || complaint.getAiPriority().isBlank()) {
+            complaint.setAiPriority("HIGH");
+        }
+        if (complaint.getAiCategory() == null || complaint.getAiCategory().isBlank()) {
+            complaint.setAiCategory("CYBER_FRAUD");
+        }
+
+        Complaint saved = complaintRepository.saveAndFlush(complaint);
 
         // Alert Rule 1: High Financial Loss (> ₹5,00,000)
         if (saved.getLossAmount() != null && saved.getLossAmount() > 500000.0) {
@@ -333,6 +340,6 @@ public class InvestigationWorkflowService {
     }
 
     private synchronized String generateComplaintNumber() {
-        return "CC-2024-" + (1000 + (int)(Math.random() * 9000));
+        return "CC-2026-" + (1000 + (int)(Math.random() * 9000));
     }
 }

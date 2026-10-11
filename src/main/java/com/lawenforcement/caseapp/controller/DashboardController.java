@@ -67,7 +67,7 @@ public class DashboardController {
         populateTelemetryBanner(model);
         model.addAttribute("activeNav", "ledger");
 
-        var allComplaints = complaintRepository.findAll();
+        var allComplaints = complaintRepository.findAllByOrderByRegisteredAtDesc();
         var filtered = allComplaints.stream()
                 .filter(c -> {
                     if (search != null && !search.isBlank()) {

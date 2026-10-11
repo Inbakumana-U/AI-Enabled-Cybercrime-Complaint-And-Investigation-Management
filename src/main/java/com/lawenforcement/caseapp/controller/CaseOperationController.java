@@ -15,6 +15,7 @@ import com.lawenforcement.intelligence.service.CyberIntelligenceService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
@@ -46,17 +47,13 @@ public class CaseOperationController {
         this.workflowService = workflowService;
     }
 
-    /**
-     * Standalone Complaint Intake Form redirect
-     */
-    @InitBinder
+    @InitBinder("complaint")
     public void initBinder(org.springframework.web.bind.WebDataBinder binder) {
+        // Disallow auto-binding multipart request param 'evidenceFiles' onto Complaint.evidenceFiles
+        // to prevent Spring MVC type mismatch / 400 Bad Request
         binder.setDisallowedFields("evidenceFiles");
     }
 
-    /**
-     * Standalone Complaint Intake Form redirect
-     */
     @GetMapping("/complaints/register")
     public String showRegistrationForm() {
         return "redirect:/intake";
@@ -66,60 +63,45 @@ public class CaseOperationController {
      * Form Submission: Intake Pipeline with Multi-Part File Upload
      */
     @PostMapping(value = "/complaints/register", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-    public String registerComplaint(@ModelAttribute Complaint complaint,
-                                    @RequestParam(value = "evidenceFiles", required = false) org.springframework.web.multipart.MultipartFile[] files,
+    public String registerComplaint(@ModelAttribute("complaint") Complaint complaint,
+                                    @RequestParam(value = "evidenceFiles", required = false) MultipartFile[] files,
                                     RedirectAttributes redirectAttributes) {
-        Complaint saved = workflowService.processNewComplaint(complaint);
+        try {
+            Complaint saved = workflowService.processNewComplaint(complaint);
 
-        int uploadedCount = 0;
-        if (files != null) {
-            for (org.springframework.web.multipart.MultipartFile file : files) {
-                if (file != null && !file.isEmpty()) {
-                    try {
-                        workflowService.attachEvidenceFile(
-                                saved,
-                                file.getOriginalFilename(),
-                                file.getContentType(),
-                                file.getBytes(),
-                                "Complaint Intake Desk"
-                        );
-                        uploadedCount++;
-                    } catch (java.io.IOException e) {
-                        // Log error and continue
-                        System.err.println("Error processing uploaded evidence file: " + e.getMessage());
+            int uploadedCount = 0;
+            if (files != null) {
+                for (MultipartFile file : files) {
+                    if (file != null && !file.isEmpty() && file.getSize() > 0) {
+                        try {
+                            workflowService.attachEvidenceFile(
+                                    saved,
+                                    file.getOriginalFilename(),
+                                    file.getContentType(),
+                                    file.getBytes(),
+                                    "Complaint Intake Desk"
+                            );
+                            uploadedCount++;
+                        } catch (Exception e) {
+                            System.err.println("Error processing evidence file: " + e.getMessage());
+                        }
                     }
                 }
             }
+
+            String msg = "Complaint registered [" + saved.getComplaintNumber() + "] with AI Priority: " + saved.getAiPriority();
+            if (uploadedCount > 0) {
+                msg += " (" + uploadedCount + " digital evidence file(s) secured with Section 65B SHA-256 hashes).";
+            }
+            redirectAttributes.addFlashAttribute("successMessage", msg);
+
+            // Redirect back to Ledger where changes are immediately visible
+            return "redirect:/ledger";
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("errorMessage", "Error saving complaint: " + e.getMessage());
+            return "redirect:/intake";
         }
-
-        String msg = "Complaint filed successfully [" + saved.getComplaintNumber() + "] with AI Priority: " + saved.getAiPriority();
-        if (uploadedCount > 0) {
-            msg += " (" + uploadedCount + " digital evidence file" + (uploadedCount > 1 ? "s" : "") + " secured with Section 65B SHA-256 integrity hashes).";
-        }
-        redirectAttributes.addFlashAttribute("successMessage", msg);
-        return "redirect:/complaints/" + saved.getId();
-    }
-
-    /**
-     * File Download / Retrieval REST Endpoint
-     */
-    @GetMapping("/evidence/{evidenceId}/download")
-    public org.springframework.http.ResponseEntity<byte[]> downloadEvidenceFile(@PathVariable("evidenceId") Long evidenceId) {
-        DigitalEvidence evidence = evidenceRepository.findById(evidenceId)
-                .orElseThrow(() -> new IllegalArgumentException("Evidence item not found: " + evidenceId));
-
-        if (evidence.getFileData() == null || evidence.getFileData().length == 0) {
-            return org.springframework.http.ResponseEntity.notFound().build();
-        }
-
-        String fileName = evidence.getFileName() != null ? evidence.getFileName() : "evidence-" + evidence.getId() + ".bin";
-        String contentType = evidence.getFileType() != null ? evidence.getFileType() : org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
-
-        return org.springframework.http.ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
-                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, contentType)
-                .header(org.springframework.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(evidence.getFileData().length))
-                .body(evidence.getFileData());
     }
 
     /**
@@ -147,6 +129,28 @@ public class CaseOperationController {
     }
 
     /**
+     * File Download / Retrieval REST Endpoint
+     */
+    @GetMapping("/evidence/{evidenceId}/download")
+    public org.springframework.http.ResponseEntity<byte[]> downloadEvidenceFile(@PathVariable("evidenceId") Long evidenceId) {
+        DigitalEvidence evidence = evidenceRepository.findById(evidenceId)
+                .orElseThrow(() -> new IllegalArgumentException("Evidence item not found: " + evidenceId));
+
+        if (evidence.getFileData() == null || evidence.getFileData().length == 0) {
+            return org.springframework.http.ResponseEntity.notFound().build();
+        }
+
+        String fileName = evidence.getFileName() != null ? evidence.getFileName() : "evidence-" + evidence.getId() + ".bin";
+        String contentType = evidence.getFileType() != null ? evidence.getFileType() : org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, contentType)
+                .header(org.springframework.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(evidence.getFileData().length))
+                .body(evidence.getFileData());
+    }
+
+    /**
      * Append Digital Evidence (Section 65B Certified)
      */
     @PostMapping("/complaints/{id}/evidence")
@@ -157,8 +161,8 @@ public class CaseOperationController {
                                      RedirectAttributes redirectAttributes) {
         DigitalEvidence ev = workflowService.addEvidence(id, evidenceType, referenceValue, officerName);
         redirectAttributes.addFlashAttribute("successMessage",
-                "Digital Evidence recorded under Section 65B with SHA-256 integrity hash: " + ev.getDigitalHash().substring(0, 16) + "...");
-        return "redirect:/complaints/" + id;
+                "Digital Evidence recorded under Section 65B with SHA-256 integrity hash: " + (ev.getDigitalHash() != null ? ev.getDigitalHash().substring(0, Math.min(16, ev.getDigitalHash().length())) : "VERIFIED") + "...");
+        return "redirect:/ledger";
     }
 
     /**
@@ -175,7 +179,7 @@ public class CaseOperationController {
         workflowService.addTransaction(id, transactionReference, amount, senderAccount, beneficiaryAccount, beneficiaryBankOrVpa);
         redirectAttributes.addFlashAttribute("successMessage",
                 "Transaction " + transactionReference + " (₹" + amount + ") successfully flagged for financial surveillance.");
-        return "redirect:/complaints/" + id;
+        return "redirect:/ledger";
     }
 
     /**
@@ -189,9 +193,6 @@ public class CaseOperationController {
         redirectAttributes.addFlashAttribute("successMessage",
                 "Statutory 1930 Bank Freeze Notice dispatched for Ref: " + updated.getTransactionReference() + " to beneficiary " + updated.getBeneficiaryAccount());
 
-        if (complaintId != null) {
-            return "redirect:/complaints/" + complaintId;
-        }
         return "redirect:/ledger";
     }
 
@@ -206,7 +207,7 @@ public class CaseOperationController {
                                    RedirectAttributes redirectAttributes) {
         workflowService.updateCaseStatus(id, status, assignedOfficer, remarks);
         redirectAttributes.addFlashAttribute("successMessage", "Case status progressed to " + status + ".");
-        return "redirect:/complaints/" + id;
+        return "redirect:/ledger";
     }
 
     /**
