@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Case Ledger &amp; Rapid Triage - National Cybercrime Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Persistent Global Navigation Bar -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <!-- ========================================================================= -->
+    <!-- PRIORITY TELEMETRY RIBBON (4 KPI BLOCKS - MANDATORY FOR LEDGER)          -->
+    <!-- ========================================================================= -->
+    <section class="border-bottom py-3 px-4 shadow-sm" style="background-color: var(--app-surface-secondary); border-bottom: 1px solid var(--app-border-color) !important;">
+        <div class="row g-0 align-items-center">
+            <!-- KPI 1: TOTAL CASES -->
+            <div class="col-6 col-md-3 kpi-block">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase small fw-semibold" style="font-size: 0.72rem; color: var(--app-text-secondary); letter-spacing: 0.5px;">TOTAL CASES</div>
+                        <div class="fs-3 fw-bold mb-0" style="color: var(--app-text-primary);" th:text="${totalCases}">0</div>
+                    </div>
+                    <div class="fs-2 text-primary opacity-50"><i class="bi bi-folder-check"></i></div>
+                </div>
+                <div class="small mt-1" style="font-size: 0.78rem; color: var(--app-text-secondary);">
+                    <span class="text-info fw-semibold" th:text="${activeInvestigationCount}">0</span> under active investigation
+                </div>
+            </div>
+
+            <!-- KPI 2: TOTAL LOSS (INR) -->
+            <div class="col-6 col-md-3 kpi-block">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase small fw-semibold" style="font-size: 0.72rem; color: var(--app-text-secondary); letter-spacing: 0.5px;">TOTAL LOSS (INR)</div>
+                        <div class="fs-3 fw-bold text-danger mb-0">₹ <span th:text="${#numbers.formatDecimal(totalLoss, 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+                    </div>
+                    <div class="fs-2 text-danger opacity-50"><i class="bi bi-currency-rupee"></i></div>
+                </div>
+                <div class="small mt-1" style="font-size: 0.78rem; color: var(--app-text-secondary);">
+                    <span class="text-danger fw-semibold" th:text="${criticalCasesCount}">0</span> Critical Cases (&ge; ₹5L)
+                </div>
+            </div>
+
+            <!-- KPI 3: HIGH-ALERT SYNDICATES -->
+            <div class="col-6 col-md-3 kpi-block">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase small fw-semibold" style="font-size: 0.72rem; color: var(--app-text-secondary); letter-spacing: 0.5px;">HIGH-ALERT SYNDICATES</div>
+                        <div class="fs-3 fw-bold text-warning mb-0" th:text="${highAlertSyndicatesCount}">0</div>
+                    </div>
+                    <div class="fs-2 text-warning opacity-50"><i class="bi bi-exclamation-triangle"></i></div>
+                </div>
+                <div class="small mt-1" style="font-size: 0.78rem; color: var(--app-text-secondary);">
+                    High-Velocity Mules &amp; Multi-State Entities
+                </div>
+            </div>
+
+            <!-- KPI 4: FREEZE REQUESTS PENDING -->
+            <div class="col-6 col-md-3 kpi-block">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-uppercase small fw-semibold" style="font-size: 0.72rem; color: var(--app-text-secondary); letter-spacing: 0.5px;">FREEZE REQUESTS PENDING</div>
+                        <div class="fs-3 fw-bold text-info mb-0" th:text="${freezeRequestsPending}">0</div>
+                    </div>
+                    <div class="fs-2 text-info opacity-50"><i class="bi bi-shield-x"></i></div>
+                </div>
+                <div class="small mt-1" style="font-size: 0.78rem; color: var(--app-text-secondary);">
+                    1930 Bank Lien Notices in Pipeline
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- LIVE ESCALATION ALERT TICKER -->
+    <div th:if="${activeAlerts != null and not #lists.isEmpty(activeAlerts)}" class="ticker-bar px-4 py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-danger px-2 py-1"><i class="bi bi-bell-fill me-1"></i> CRITICAL ESCALATION</span>
+            <span class="small text-light">
+                <strong class="text-warning" th:text="${#lists.size(activeAlerts)}">1</strong> unacknowledged escalation alerts pending:
+            </span>
+            <span class="small text-white fw-bold" th:text="${activeAlerts[0].alertMessage}">Alert message</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a th:href="@{/complaints/{id}(id=${activeAlerts[0].complaintId})}" class="btn btn-outline-light btn-sm py-0">Review Case</a>
+            <form th:action="@{/alerts/{alertId}/acknowledge(alertId=${activeAlerts[0].id})}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-warning btn-sm py-0 text-dark fw-semibold">Acknowledge</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FLASH SUCCESS MESSAGE -->
+    <div class="container-fluid px-5 pt-4" th:if="${successMessage}">
+        <div class="alert alert-success alert-dismissible fade show bg-success bg-opacity-25 border-success py-3 px-4 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2 text-warning fs-5"></i>
+            <span class="fw-semibold" th:text="${successMessage}">Success!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MAIN CONTENT CONTAINER (GENEROUS SPACING p-5 mb-5)                        -->
+    <!-- ========================================================================= -->
+    <main class="container-fluid px-5 py-4">
+        
+        <!-- ROW 1: ACTIVE COMPLAINT LEDGER & RAPID TRIAGE TABLE -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card shadow-sm border">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-3 py-3 px-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi bi-folder2-open text-primary fs-4"></i>
+                            <div>
+                                <h5 class="mb-0 fw-bold">Active Case Ledger &amp; Rapid Triage</h5>
+                                <div class="small" style="color: var(--app-text-secondary);">Comprehensive incident register with deterministic XAI classification and risk scores</div>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge bg-secondary px-3 py-2 fs-6 font-monospace" th:text="${#lists.size(complaints) + ' Cases Listed'}">0 Cases</span>
+                            <a th:href="@{/intake}" class="btn btn-primary px-3 py-2 fw-semibold">
+                                <i class="bi bi-plus-circle me-1"></i> Register New Complaint
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <!-- Filters Form -->
+                        <form th:action="@{/ledger}" method="get" class="row g-3 mb-4 p-3 rounded border align-items-end" style="background-color: var(--app-surface-secondary); border-color: var(--app-border-color) !important;">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold" style="color: var(--app-text-secondary);">SEARCH CASE REF / CITIZEN / PHONE</label>
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="Search case ref, complainant name, phone..." th:value="${search}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold" style="color: var(--app-text-secondary);">AI PRIORITY FILTER</label>
+                                <select name="priority" class="form-select">
+                                    <option value="" th:selected="${selectedPriority == null or selectedPriority == ''}">All Priorities</option>
+                                    <option value="CRITICAL" th:selected="${selectedPriority == 'CRITICAL'}">CRITICAL</option>
+                                    <option value="HIGH" th:selected="${selectedPriority == 'HIGH'}">HIGH</option>
+                                    <option value="MEDIUM" th:selected="${selectedPriority == 'MEDIUM'}">MEDIUM</option>
+                                    <option value="LOW" th:selected="${selectedPriority == 'LOW'}">LOW</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-semibold" style="color: var(--app-text-secondary);">INVESTIGATION STATUS</label>
+                                <select name="status" class="form-select">
+                                    <option value="" th:selected="${selectedStatus == null or selectedStatus == ''}">All Statuses</option>
+                                    <option value="NEW" th:selected="${selectedStatus == 'NEW'}">NEW</option>
+                                    <option value="ASSIGNED" th:selected="${selectedStatus == 'ASSIGNED'}">ASSIGNED</option>
+                                    <option value="UNDER_INVESTIGATION" th:selected="${selectedStatus == 'UNDER_INVESTIGATION'}">UNDER_INVESTIGATION</option>
+                                    <option value="ESCALATED" th:selected="${selectedStatus == 'ESCALATED'}">ESCALATED</option>
+                                    <option value="RESOLVED" th:selected="${selectedStatus == 'RESOLVED'}">RESOLVED</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i> Filter</button>
+                                <a th:href="@{/ledger}" class="btn btn-outline-secondary">Reset</a>
+                            </div>
+                        </form>
+
+                        <!-- Complaints Ledger Table -->
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="py-3 px-3">Case Ref</th>
+                                        <th class="py-3 px-3">Complainant</th>
+                                        <th class="py-3 px-3">Category</th>
+                                        <th class="py-3 px-3">AI Priority</th>
+                                        <th class="py-3 px-3">Loss Amount</th>
+                                        <th class="py-3 px-3">Suspect Handle</th>
+                                        <th class="py-3 px-3">Status</th>
+                                        <th class="py-3 px-3">Assigned Officer</th>
+                                        <th class="py-3 px-3 text-end">Quick Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(complaints)}">
+                                        <td colspan="9" class="text-center py-5 text-secondary">
+                                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                            No complaints match the search criteria.
+                                        </td>
+                                    </tr>
+                                    <tr th:each="c : ${complaints}">
+                                        <td class="py-3 px-3">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <a th:href="@{/complaints/{id}(id=${c.id})}" class="fw-bold text-primary text-decoration-none font-monospace fs-6" th:text="${c.complaintNumber}">CC-2024-XXXX</a>
+                                                <span th:if="${c.attachedFileCount > 0}" class="badge bg-secondary font-monospace" title="Attached Binary Evidence Files">
+                                                    <i class="bi bi-paperclip"></i> <span th:text="${c.attachedFileCount + (c.attachedFileCount == 1 ? ' File' : ' Files')}">1 File</span>
+                                                </span>
+                                            </div>
+                                            <div class="small" style="color: var(--app-text-secondary);" th:text="${#temporals.format(c.registeredAt, 'dd-MMM-yyyy')}">Date</div>
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <div class="fw-semibold" th:text="${c.complainantName}">Name</div>
+                                            <small style="color: var(--app-text-secondary);" th:text="${c.contactPhone}">Phone</small>
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <span class="badge bg-secondary bg-opacity-75 font-monospace" th:text="${c.aiCategory}">CATEGORY</span>
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <span th:if="${c.aiPriority == 'CRITICAL'}" class="badge badge-critical px-2 py-1">CRITICAL</span>
+                                            <span th:if="${c.aiPriority == 'HIGH'}" class="badge badge-high px-2 py-1">HIGH</span>
+                                            <span th:if="${c.aiPriority == 'MEDIUM'}" class="badge badge-medium px-2 py-1">MEDIUM</span>
+                                            <span th:if="${c.aiPriority == 'LOW'}" class="badge badge-low px-2 py-1">LOW</span>
+                                        </td>
+                                        <td class="py-3 px-3 fw-bold text-danger font-monospace">
+                                            ₹ <span th:text="${#numbers.formatDecimal(c.lossAmount, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <code class="text-warning small fw-bold" th:text="${c.suspectIdentifier ?: 'None'}">handle</code>
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <span class="badge" 
+                                                  th:classappend="${c.status == 'NEW' ? 'bg-primary' : (c.status == 'RESOLVED' ? 'bg-success' : (c.status == 'ESCALATED' ? 'bg-danger' : 'bg-info'))}"
+                                                  th:text="${c.status}">STATUS</span>
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <span class="small" style="color: var(--app-text-secondary);" th:text="${c.assignedOfficer ?: 'Unassigned'}">Officer</span>
+                                        </td>
+                                        <td class="py-3 px-3 text-end">
+                                            <a th:href="@{/complaints/{id}(id=${c.id})}" class="btn btn-outline-primary btn-sm px-3 py-1 fw-semibold">
+                                                <i class="bi bi-file-earmark-text me-1"></i> View Full Dossier
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 2: 1930 FINANCIAL FRAUD & TRANSACTION FREEZE WATCHLIST -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border">
+                    <div class="card-header d-flex justify-content-between align-items-center py-3 px-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="bi bi-bank text-warning fs-4"></i>
+                            <div>
+                                <h5 class="mb-0 fw-bold">Financial Fraud &amp; 1930 Transaction Freeze Watchlist</h5>
+                                <div class="small" style="color: var(--app-text-secondary);">Real-time financial surveillance, high-velocity mule tracking, and statutory bank lien dispatch</div>
+                            </div>
+                        </div>
+                        <span class="badge bg-danger px-3 py-2 fs-6 font-monospace" th:text="${#lists.size(recentTransactions) + ' Transactions Monitored'}">0 Transactions</span>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="py-3 px-3">Transaction Ref</th>
+                                        <th class="py-3 px-3">Amount (INR)</th>
+                                        <th class="py-3 px-3">Sender</th>
+                                        <th class="py-3 px-3">Beneficiary / VPA</th>
+                                        <th class="py-3 px-3">Velocity Status</th>
+                                        <th class="py-3 px-3">Freeze Status</th>
+                                        <th class="py-3 px-3 text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${#lists.isEmpty(recentTransactions)}">
+                                        <td colspan="7" class="text-center py-5 text-secondary">No transactions currently flagged in surveillance pipeline.</td>
+                                    </tr>
+                                    <tr th:each="txn : ${recentTransactions}">
+                                        <td class="py-3 px-3 fw-bold font-monospace text-primary" th:text="${txn.transactionReference}">TXN-01</td>
+                                        <td class="py-3 px-3 fw-bold text-danger font-monospace">₹ <span th:text="${#numbers.formatDecimal(txn.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></td>
+                                        <td class="py-3 px-3 small" style="color: var(--app-text-secondary);" th:text="${txn.senderAccount}">Sender</td>
+                                        <td class="py-3 px-3">
+                                            <code class="text-warning fw-bold" th:text="${txn.beneficiaryAccount}">VPA</code>
+                                            <div class="small" style="color: var(--app-text-secondary);" th:text="${txn.beneficiaryBankOrVpa}">Bank</div>
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <span th:if="${txn.velocityTag == 'HIGH_VELOCITY_MULE_ACCOUNT'}" class="badge bg-danger px-2 py-1">
+                                                <i class="bi bi-exclamation-triangle-fill me-1"></i> HIGH_VELOCITY_MULE
+                                            </span>
+                                            <span th:if="${txn.velocityTag != 'HIGH_VELOCITY_MULE_ACCOUNT'}" class="badge bg-secondary px-2 py-1">STANDARD</span>
+                                        </td>
+                                        <td class="py-3 px-3">
+                                            <span th:if="${txn.transactionStatus == 'FLAGGED'}" class="badge bg-warning text-dark px-2 py-1">FLAGGED</span>
+                                            <span th:if="${txn.transactionStatus == 'FREEZE_REQUESTED'}" class="badge bg-info text-dark px-2 py-1">FREEZE_REQUESTED</span>
+                                            <span th:if="${txn.transactionStatus == 'FROZEN'}" class="badge bg-success px-2 py-1">FROZEN</span>
+                                            <span th:if="${txn.transactionStatus == 'ESCALATED'}" class="badge bg-danger px-2 py-1">ESCALATED</span>
+                                        </td>
+                                        <td class="py-3 px-3 text-end">
+                                            <form th:if="${txn.transactionStatus == 'FLAGGED'}" th:action="@{/transactions/{txnId}/freeze(txnId=${txn.id})}" method="post" class="d-inline">
+                                                <input type="hidden" name="complaintId" th:value="${txn.complaintId}">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm px-3 py-1 fw-semibold">
+                                                    <i class="bi bi-shield-x me-1"></i> 1930 Bank Freeze
+                                                </button>
+                                            </form>
+                                            <span th:if="${txn.transactionStatus != 'FLAGGED'}" class="small" style="color: var(--app-text-secondary);">
+                                                <i class="bi bi-check-all text-success me-1"></i>Lien Dispatched
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

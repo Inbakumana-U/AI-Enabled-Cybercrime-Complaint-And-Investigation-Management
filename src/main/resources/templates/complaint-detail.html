@@ -6,149 +6,208 @@
     <title th:text="'Case Dossier - ' + ${complaint.complaintNumber}">Case Dossier</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        body { background-color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
-        .badge-critical { background-color: #dc2626 !important; color: white; }
-        .badge-high { background-color: #f59e0b !important; color: black; }
-        .badge-medium { background-color: #06b6d4 !important; color: black; }
-        .badge-low { background-color: #64748b !important; color: white; }
-        .ai-triage-panel {
-            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-            color: white;
-            border-left: 5px solid #38bdf8;
-            border-radius: 8px;
-        }
-    </style>
 </head>
 <body>
+
     <!-- Persistent Global Navigation Bar -->
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container-fluid px-4 py-4">
-        <!-- Toast message -->
-        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-check-circle-fill me-2"></i>
-            <span th:text="${successMessage}">Success!</span>
+    <!-- FLASH SUCCESS MESSAGE -->
+    <div class="container-fluid px-5 pt-4" th:if="${successMessage}">
+        <div class="alert alert-success alert-dismissible fade show bg-success bg-opacity-25 border-success py-3 px-4 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2 text-warning fs-5"></i>
+            <span class="fw-semibold" th:text="${successMessage}">Success!</span>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
+    </div>
 
-        <!-- Case Dossier Header Card -->
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+    <!-- ========================================================================= -->
+    <!-- COMPREHENSIVE CASE DOSSIER VIEW (GENEROUS SPACING px-5 py-4 mb-5)         -->
+    <!-- ========================================================================= -->
+    <main class="container-fluid px-5 py-4 mb-5">
+        
+        <!-- ROW 1: CASE DOSSIER HEADER CARD -->
+        <div class="card shadow-sm border mb-4">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-3">
-                    <span class="fs-4 fw-bold text-warning" th:text="${complaint.complaintNumber}">CC-2024-XXXX</span>
-                    <span th:if="${complaint.aiPriority == 'CRITICAL'}" class="badge badge-critical px-3 py-2">CRITICAL PRIORITY</span>
-                    <span th:if="${complaint.aiPriority == 'HIGH'}" class="badge badge-high px-3 py-2">HIGH PRIORITY</span>
-                    <span th:if="${complaint.aiPriority == 'MEDIUM'}" class="badge badge-medium px-3 py-2">MEDIUM PRIORITY</span>
-                    <span th:if="${complaint.aiPriority == 'LOW'}" class="badge badge-low px-3 py-2">LOW PRIORITY</span>
+                    <span class="fs-4 fw-bold font-monospace text-primary" th:text="${complaint.complaintNumber}">CC-2024-XXXX</span>
+                    <span th:if="${complaint.aiPriority == 'CRITICAL'}" class="badge badge-critical px-3 py-2 font-monospace">CRITICAL PRIORITY</span>
+                    <span th:if="${complaint.aiPriority == 'HIGH'}" class="badge badge-high px-3 py-2 font-monospace">HIGH PRIORITY</span>
+                    <span th:if="${complaint.aiPriority == 'MEDIUM'}" class="badge badge-medium px-3 py-2 font-monospace">MEDIUM PRIORITY</span>
+                    <span th:if="${complaint.aiPriority == 'LOW'}" class="badge badge-low px-3 py-2 font-monospace">LOW PRIORITY</span>
                 </div>
-                <a th:href="@{/dashboard}" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-arrow-left me-1"></i> Back to Command Dashboard
+                <a th:href="@{/ledger}" class="btn btn-outline-secondary px-3 py-2 fw-semibold">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Case Ledger
                 </a>
             </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3 border-end">
-                        <div class="text-muted small text-uppercase fw-semibold">Complainant</div>
-                        <div class="fw-bold fs-5 text-dark" th:text="${complaint.complainantName}">Name</div>
-                        <div class="text-secondary small mt-1">
+            <div class="card-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-3 border-end" style="border-color: var(--app-border-color) !important;">
+                        <div class="small text-uppercase fw-semibold" style="color: var(--app-text-secondary);">Complainant Details</div>
+                        <div class="fw-bold fs-5 mt-1" th:text="${complaint.complainantName}">Name</div>
+                        <div class="small mt-1" style="color: var(--app-text-secondary);">
                             <i class="bi bi-telephone me-1"></i> <span th:text="${complaint.contactPhone}">Phone</span>
                         </div>
                     </div>
-                    <div class="col-md-3 border-end">
-                        <div class="text-muted small text-uppercase fw-semibold">Financial Loss</div>
-                        <div class="fw-bold fs-4 text-danger">₹ <span th:text="${#numbers.formatDecimal(complaint.lossAmount, 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
-                        <div class="text-secondary small">
+                    <div class="col-md-3 border-end" style="border-color: var(--app-border-color) !important;">
+                        <div class="small text-uppercase fw-semibold" style="color: var(--app-text-secondary);">Reported Financial Loss</div>
+                        <div class="fw-bold fs-4 text-danger font-monospace mt-1">₹ <span th:text="${#numbers.formatDecimal(complaint.lossAmount, 1, 'COMMA', 2, 'POINT')}">0.00</span></div>
+                        <div class="small" style="color: var(--app-text-secondary);">
                             Registered: <span th:text="${#temporals.format(complaint.registeredAt, 'dd-MMM-yyyy HH:mm')}">Date</span>
                         </div>
                     </div>
-                    <div class="col-md-3 border-end">
-                        <div class="text-muted small text-uppercase fw-semibold">Investigation Status</div>
+                    <div class="col-md-3 border-end" style="border-color: var(--app-border-color) !important;">
+                        <div class="small text-uppercase fw-semibold" style="color: var(--app-text-secondary);">Investigation Status</div>
                         <div class="mt-1">
-                            <span class="badge fs-6 px-3 py-1" 
+                            <span class="badge fs-6 px-3 py-1 font-monospace" 
                                   th:classappend="${complaint.status == 'NEW' ? 'bg-primary' : (complaint.status == 'RESOLVED' ? 'bg-success' : (complaint.status == 'ESCALATED' ? 'bg-danger' : 'bg-info'))}"
                                   th:text="${complaint.status}">STATUS</span>
                         </div>
-                        <div class="text-secondary small mt-2">
-                            Assigned Officer: <strong th:text="${complaint.assignedOfficer ?: 'Unassigned'}">Officer</strong>
+                        <div class="small mt-2" style="color: var(--app-text-secondary);">
+                            Assigned Officer: <strong style="color: var(--app-text-primary);" th:text="${complaint.assignedOfficer ?: 'Unassigned'}">Officer</strong>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="text-muted small text-uppercase fw-semibold">Suspect Digital Identifier</div>
-                        <div class="mt-1">
-                            <code class="fs-6 text-danger fw-bold" th:text="${complaint.suspectIdentifier ?: 'None Provided'}">Identifier</code>
+                        <div class="small text-uppercase fw-semibold" style="color: var(--app-text-secondary);">Suspect Digital Identifier (IoC)</div>
+                        <div class="mt-2">
+                            <code class="fs-6 text-danger fw-bold font-monospace" th:text="${complaint.suspectIdentifier ?: 'None Provided'}">Identifier</code>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Embedded AI Decision Support Card (Feature 3) -->
-        <div class="card ai-triage-panel p-4 mb-4 shadow-sm">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="badge bg-dark text-info border border-info px-2 py-1">
-                    <i class="bi bi-cpu me-1"></i> AI Intelligence Classification &amp; Prioritization Card
+        <!-- ROW 2: NATIVE AI TRIAGE & EXPLAINABILITY PANEL -->
+        <div class="card sandbox-panel p-4 mb-4 shadow-sm border" style="background-color: var(--app-surface-secondary);">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <span class="badge bg-primary text-uppercase px-3 py-2 font-monospace">
+                    <i class="bi bi-cpu me-1"></i> AI Intelligence Classification &amp; Prioritization Rationale
                 </span>
-                <span class="text-light small fw-bold">
-                    Confidence: <span class="text-warning" th:text="${#numbers.formatDecimal((complaint.aiConfidenceScore ?: 0.0) * 100, 1, 1) + '%'}">85.0%</span>
+                <span class="small" style="color: var(--app-text-primary);">
+                    Confidence Score: <strong class="text-warning font-monospace" th:text="${#numbers.formatDecimal((complaint.aiConfidenceScore ?: 0.0) * 100, 1, 1) + '%'}">85.0%</strong>
                 </span>
             </div>
-            <h4 class="fw-bold text-white mb-2">
-                Predicted Category: <span class="text-warning" th:text="${complaint.aiCategory}">CATEGORY</span>
+            <h4 class="fw-bold mb-2" style="color: var(--app-text-primary);">
+                Predicted Category: <span class="text-info font-monospace" th:text="${complaint.aiCategory}">CATEGORY</span>
             </h4>
-            <div class="mt-2 pt-2 border-top border-light border-opacity-25">
-                <h6 class="fw-bold text-info mb-1"><i class="bi bi-lightbulb me-1"></i>Explainability Rationale (aiKeyFactors):</h6>
-                <p class="mb-0 text-light text-opacity-90" th:text="${complaint.aiKeyFactors}">Key factors description...</p>
+            <div class="mt-3 pt-3 border-top" style="border-color: var(--app-border-color) !important;">
+                <h6 class="fw-bold text-warning mb-2"><i class="bi bi-lightbulb me-1"></i>Explainability Rationale (aiKeyFactors):</h6>
+                <p class="mb-0" style="color: var(--app-text-secondary); line-height: 1.6;" th:text="${complaint.aiKeyFactors}">Key factors description...</p>
             </div>
         </div>
 
-        <!-- Incident Statement Narrative -->
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-light fw-bold">
-                <i class="bi bi-card-text me-2"></i>Incident Narrative Statement
+        <!-- ROW 3: INCIDENT STATEMENT NARRATIVE -->
+        <div class="card shadow-sm border mb-4">
+            <div class="card-header py-3 px-4 fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-card-text text-primary fs-5"></i> Incident Deposition Statement
             </div>
-            <div class="card-body">
-                <p class="mb-0 text-dark" style="white-space: pre-line;" th:text="${complaint.incidentDescription}">Narrative...</p>
+            <div class="card-body p-4">
+                <p class="mb-0" style="white-space: pre-line; line-height: 1.7; color: var(--app-text-primary);" th:text="${complaint.incidentDescription}">Narrative...</p>
             </div>
         </div>
 
-        <!-- FEATURE 1: DIGITAL EVIDENCE REFERENCE MANAGEMENT (SEC 65B CHAIN-OF-CUSTODY) -->
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+        <!-- ROW 4A: ATTACHED EVIDENTIARY FILES & FORENSIC HASHES -->
+        <div class="card shadow-sm border mb-4">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-fingerprint text-warning fs-5"></i>
-                    <h6 class="mb-0 fw-bold">Digital Evidence &amp; Section 65B Chain of Custody Ledger</h6>
+                    <i class="bi bi-paperclip text-success fs-4"></i>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Attached Evidentiary Files &amp; Forensic Hashes</h5>
+                        <div class="small" style="color: var(--app-text-secondary);">Binary evidence files stored in PostgreSQL with Section 65B SHA-256 cryptographic hashes</div>
+                    </div>
                 </div>
-                <span class="badge bg-info text-dark" th:text="${#lists.size(evidenceList) + ' Evidence Tokens'}">0 Tokens</span>
+                <span class="badge bg-success font-monospace px-3 py-2 fs-6" 
+                      th:text="${#lists.size(complaint.evidenceFiles.?[fileData != null]) + ' Files Attached'}">0 Files</span>
             </div>
-            <div class="card-body">
-                <div class="table-responsive mb-3">
-                    <table class="table table-sm table-hover align-middle mb-0">
-                        <thead class="table-light">
+            <div class="card-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
                             <tr>
-                                <th>Evidence Type</th>
-                                <th>Reference Value / IoC Token</th>
-                                <th>SHA-256 Integrity Hash</th>
-                                <th>Chain of Custody Officer</th>
-                                <th>Logged Timestamp</th>
-                                <th>Action</th>
+                                <th class="py-3 px-3">File Name</th>
+                                <th class="py-3 px-3">File Type</th>
+                                <th class="py-3 px-3">File Size</th>
+                                <th class="py-3 px-3">SHA-256 Integrity Hash</th>
+                                <th class="py-3 px-3">Uploaded Timestamp</th>
+                                <th class="py-3 px-3 text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(complaint.evidenceFiles.?[fileData != null])}">
+                                <td colspan="6" class="text-center py-4 text-secondary">
+                                    <i class="bi bi-file-earmark-x fs-3 d-block mb-2"></i>
+                                    No binary evidence files uploaded for this complaint.
+                                </td>
+                            </tr>
+                            <tr th:each="file : ${complaint.evidenceFiles.?[fileData != null]}">
+                                <td class="py-3 px-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i th:if="${file.fileType != null and file.fileType.contains('image')}" class="bi bi-file-earmark-image text-info fs-5"></i>
+                                        <i th:if="${file.fileType != null and file.fileType.contains('pdf')}" class="bi bi-file-earmark-pdf text-danger fs-5"></i>
+                                        <i th:if="${file.fileType == null or (!file.fileType.contains('image') and !file.fileType.contains('pdf'))}" class="bi bi-file-earmark-binary text-warning fs-5"></i>
+                                        <span class="fw-bold font-monospace" style="color: var(--app-text-primary);" th:text="${file.fileName}">evidence.pdf</span>
+                                    </div>
+                                </td>
+                                <td class="py-3 px-3">
+                                    <span class="badge bg-secondary font-monospace" th:text="${file.fileType ?: 'application/octet-stream'}">type</span>
+                                </td>
+                                <td class="py-3 px-3 font-monospace small" style="color: var(--app-text-primary);" th:text="${file.formattedFileSize}">0 KB</td>
+                                <td class="py-3 px-3">
+                                    <code class="small text-danger font-monospace px-2 py-1 rounded" style="background-color: var(--app-surface-secondary);" th:text="${file.sha256Hash}">SHA256</code>
+                                </td>
+                                <td class="py-3 px-3 small" style="color: var(--app-text-secondary);" th:text="${#temporals.format(file.loggedAt, 'dd-MMM-yyyy HH:mm')}">Date</td>
+                                <td class="py-3 px-3 text-end">
+                                    <a th:href="@{'/evidence/' + ${file.id} + '/download'}" class="btn btn-sm btn-outline-primary px-3 py-1 fw-semibold">
+                                        <i class="bi bi-download me-1"></i> Download
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 4B: FEATURE 1 - DIGITAL EVIDENCE REFERENCE MANAGEMENT (SEC 65B) -->
+        <div class="card shadow-sm border mb-4">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-fingerprint text-warning fs-4"></i>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Digital Evidence &amp; Section 65B Chain of Custody Ledger</h5>
+                        <div class="small" style="color: var(--app-text-secondary);">Cryptographic SHA-256 integrity verification for Indian Evidence Act Section 65B compliance</div>
+                    </div>
+                </div>
+                <span class="badge bg-info text-dark font-monospace px-3 py-2 fs-6" th:text="${#lists.size(evidenceList) + ' Evidence Tokens'}">0 Tokens</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="py-3 px-3">Evidence Type</th>
+                                <th class="py-3 px-3">Reference Value / IoC Token</th>
+                                <th class="py-3 px-3">SHA-256 Integrity Hash</th>
+                                <th class="py-3 px-3">Chain of Custody Officer</th>
+                                <th class="py-3 px-3">Logged Timestamp</th>
+                                <th class="py-3 px-3 text-end">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr th:if="${#lists.isEmpty(evidenceList)}">
-                                <td colspan="6" class="text-center py-3 text-muted">No digital evidence appended yet.</td>
+                                <td colspan="6" class="text-center py-4 text-secondary">No digital evidence appended yet.</td>
                             </tr>
                             <tr th:each="ev : ${evidenceList}">
-                                <td><span class="badge bg-secondary" th:text="${ev.evidenceType}">TYPE</span></td>
-                                <td class="fw-bold font-monospace" th:text="${ev.referenceValue}">Value</td>
-                                <td><code class="small text-danger" th:text="${ev.digitalHash}">HASH</code></td>
-                                <td class="small text-dark" th:text="${ev.chainOfCustodyOfficer}">Officer</td>
-                                <td class="small text-muted" th:text="${#temporals.format(ev.loggedAt, 'dd-MMM-yyyy HH:mm')}">Date</td>
-                                <td>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 btn-copy-ref" 
+                                <td class="py-3 px-3"><span class="badge bg-secondary font-monospace" th:text="${ev.evidenceType}">TYPE</span></td>
+                                <td class="py-3 px-3 fw-bold font-monospace" th:text="${ev.referenceValue}">Value</td>
+                                <td class="py-3 px-3"><code class="small text-danger font-monospace" th:text="${ev.digitalHash}">HASH</code></td>
+                                <td class="py-3 px-3 small" style="color: var(--app-text-primary);" th:text="${ev.chainOfCustodyOfficer}">Officer</td>
+                                <td class="py-3 px-3 small" style="color: var(--app-text-secondary);" th:text="${#temporals.format(ev.loggedAt, 'dd-MMM-yyyy HH:mm')}">Date</td>
+                                <td class="py-3 px-3 text-end">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm px-3 py-1 btn-copy-ref" 
                                             th:attr="data-copy-val=${ev.referenceValue}"
                                             onclick="navigator.clipboard.writeText(this.getAttribute('data-copy-val')); alert('Copied to clipboard: ' + this.getAttribute('data-copy-val'));">
-                                        <i class="bi bi-clipboard"></i> Copy
+                                        <i class="bi bi-clipboard me-1"></i> Copy
                                     </button>
                                 </td>
                             </tr>
@@ -157,12 +216,14 @@
                 </div>
 
                 <!-- Append Digital Evidence Form -->
-                <div class="p-3 bg-light rounded border">
-                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-plus-circle me-1 text-primary"></i> Append Digital Evidence Reference Item</h6>
-                    <form th:action="@{/complaints/{id}/evidence(id=${complaint.id})}" method="post" class="row g-2 align-items-end">
+                <div class="p-4 rounded border" style="background-color: var(--app-surface-secondary); border-color: var(--app-border-color) !important;">
+                    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: var(--app-text-primary);">
+                        <i class="bi bi-plus-circle text-primary"></i> Append Digital Evidence Reference Item
+                    </h6>
+                    <form th:action="@{/complaints/{id}/evidence(id=${complaint.id})}" method="post" class="row g-3 align-items-end">
                         <div class="col-md-3">
-                            <label class="form-label small fw-semibold text-muted">EVIDENCE TYPE</label>
-                            <select name="evidenceType" class="form-select form-select-sm" required>
+                            <label class="form-label small fw-semibold" style="color: var(--app-text-secondary);">EVIDENCE TYPE</label>
+                            <select name="evidenceType" class="form-select" required>
                                 <option value="TRANSACTION_UTR">TRANSACTION_UTR</option>
                                 <option value="PHISHING_URL">PHISHING_URL</option>
                                 <option value="SUSPECT_PHONE">SUSPECT_PHONE</option>
@@ -171,16 +232,16 @@
                             </select>
                         </div>
                         <div class="col-md-5">
-                            <label class="form-label small fw-semibold text-muted">TOKEN / REFERENCE VALUE</label>
-                            <input type="text" name="referenceValue" class="form-control form-control-sm" placeholder="UTR, URL, wallet address, or APK hash" required>
+                            <label class="form-label small fw-semibold" style="color: var(--app-text-secondary);">TOKEN / REFERENCE VALUE</label>
+                            <input type="text" name="referenceValue" class="form-control font-monospace" placeholder="UTR, URL, wallet address, or APK hash" required>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label small fw-semibold text-muted">OFFICER BADGE/NAME</label>
-                            <input type="text" name="officerName" class="form-control form-control-sm" th:value="${complaint.assignedOfficer ?: 'Forensic Unit'}" required>
+                            <label class="form-label small fw-semibold" style="color: var(--app-text-secondary);">OFFICER BADGE / NAME</label>
+                            <input type="text" name="officerName" class="form-control" th:value="${complaint.assignedOfficer ?: 'Forensic Unit'}" required>
                         </div>
                         <div class="col-md-2">
-                            <button type="submit" class="btn btn-primary btn-sm w-100 fw-semibold">
-                                <i class="bi bi-lock-fill me-1"></i> Log &amp; Hash (Sec 65B)
+                            <button type="submit" class="btn btn-primary w-100 fw-semibold py-2">
+                                <i class="bi bi-lock-fill me-1"></i> Log &amp; Hash
                             </button>
                         </div>
                     </form>
@@ -188,106 +249,65 @@
             </div>
         </div>
 
-        <!-- FEATURE 2: FINANCIAL FRAUD & 1930 TRANSACTION MONITORING LEDGER -->
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+        <!-- ROW 5: FEATURE 2 - FINANCIAL FRAUD & 1930 TRANSACTION MONITORING -->
+        <div class="card shadow-sm border mb-4">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-bank text-warning fs-5"></i>
-                    <h6 class="mb-0 fw-bold">Financial Fraud &amp; 1930 Bank Freeze Monitoring</h6>
+                    <i class="bi bi-bank text-warning fs-4"></i>
+                    <div>
+                        <h5 class="mb-0 fw-bold">Financial Fraud &amp; 1930 Bank Freeze Monitoring</h5>
+                        <div class="small" style="color: var(--app-text-secondary);">Mule velocity tracking and instant statutory lien dispatch to nodal banking intermediaries</div>
+                    </div>
                 </div>
-                <span class="badge bg-danger" th:text="${#lists.size(transactionList) + ' Transactions'}">0</span>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Transaction Ref</th>
-                                <th>Amount (INR)</th>
-                                <th>Sender</th>
-                                <th>Beneficiary Account / VPA</th>
-                                <th>Velocity Status</th>
-                                <th>Freeze State</th>
-                                <th>Statutory Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:if="${#lists.isEmpty(transactionList)}">
-                                <td colspan="7" class="text-center py-3 text-muted">No financial transactions logged for this case.</td>
-                            </tr>
-                            <tr th:each="txn : ${transactionList}">
-                                <td class="font-monospace fw-bold" th:text="${txn.transactionReference}">Ref</td>
-                                <td class="fw-bold text-danger">₹ <span th:text="${#numbers.formatDecimal(txn.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></td>
-                                <td class="small text-muted" th:text="${txn.senderAccount}">Sender</td>
-                                <td>
-                                    <code class="text-danger fw-bold" th:text="${txn.beneficiaryAccount}">VPA</code>
-                                    <div class="small text-muted" th:text="${txn.beneficiaryBankOrVpa}">Bank</div>
-                                </td>
-                                <td>
-                                    <span th:if="${txn.velocityTag == 'HIGH_VELOCITY_MULE_ACCOUNT'}" class="badge bg-danger">HIGH_VELOCITY_MULE</span>
-                                    <span th:if="${txn.velocityTag != 'HIGH_VELOCITY_MULE_ACCOUNT'}" class="badge bg-secondary">STANDARD</span>
-                                </td>
-                                <td>
-                                    <span th:if="${txn.transactionStatus == 'FLAGGED'}" class="badge bg-warning text-dark">FLAGGED</span>
-                                    <span th:if="${txn.transactionStatus == 'FREEZE_REQUESTED'}" class="badge bg-info text-dark">FREEZE_REQUESTED</span>
-                                    <span th:if="${txn.transactionStatus == 'FROZEN'}" class="badge bg-success">FROZEN</span>
-                                    <span th:if="${txn.transactionStatus == 'ESCALATED'}" class="badge bg-danger">ESCALATED</span>
-                                </td>
-                                <td>
-                                    <form th:if="${txn.transactionStatus == 'FLAGGED'}" th:action="@{/transactions/{txnId}/freeze(txnId=${txn.id})}" method="post" class="d-inline">
-                                        <input type="hidden" name="complaintId" th:value="${complaint.id}">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0">
-                                            <i class="bi bi-shield-x me-1"></i> Simulate 1930 Bank Freeze Notice
-                                        </button>
-                                    </form>
-                                    <span th:if="${txn.transactionStatus != 'FLAGGED'}" class="small text-success fw-bold">Notice Active</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Embedded Related Historical Cases Table (Feature 4) -->
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
-                <div>
-                    <h6 class="mb-0 fw-bold">
-                        <i class="bi bi-diagram-3-fill text-warning me-2"></i>Related Historical Cases &amp; Pattern Linkages
-                    </h6>
-                    <small class="text-light text-opacity-75">Cross-referenced against master cybercrime intelligence dataset</small>
-                </div>
-                <span class="badge bg-secondary" th:text="${#lists.size(correlations) + ' Matches Found'}">0 Matches</span>
+                <span class="badge bg-danger font-monospace px-3 py-2 fs-6" th:text="${#lists.size(transactionList) + ' Transactions Logged'}">0</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                        <thead>
                             <tr>
-                                <th>Historical Case ID</th>
-                                <th>Matched Identifier</th>
-                                <th>Similarity Score</th>
-                                <th>Correlation Rationale</th>
+                                <th class="py-3 px-3">Transaction Ref</th>
+                                <th class="py-3 px-3">Amount (INR)</th>
+                                <th class="py-3 px-3">Sender</th>
+                                <th class="py-3 px-3">Beneficiary Account / VPA</th>
+                                <th class="py-3 px-3">Velocity Status</th>
+                                <th class="py-3 px-3">Freeze State</th>
+                                <th class="py-3 px-3 text-end">Statutory Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr th:if="${#lists.isEmpty(correlations)}">
-                                <td colspan="4" class="text-center py-4 text-muted">
-                                    No linked historical cases found for this suspect identifier or narrative.
-                                </td>
+                            <tr th:if="${#lists.isEmpty(transactionList)}">
+                                <td colspan="7" class="text-center py-4 text-secondary">No financial transactions logged for this case.</td>
                             </tr>
-                            <tr th:each="corr : ${correlations}">
-                                <td class="fw-bold text-primary" th:text="${corr.historicalCaseId}">HC-2024-001</td>
-                                <td>
-                                    <code class="text-danger fw-bold" th:text="${corr.matchedIdentifier}">Identifier</code>
+                            <tr th:each="txn : ${transactionList}">
+                                <td class="py-3 px-3 font-monospace fw-bold text-primary" th:text="${txn.transactionReference}">Ref</td>
+                                <td class="py-3 px-3 fw-bold text-danger font-monospace">₹ <span th:text="${#numbers.formatDecimal(txn.amount, 1, 'COMMA', 2, 'POINT')}">0.00</span></td>
+                                <td class="py-3 px-3 small" style="color: var(--app-text-secondary);" th:text="${txn.senderAccount}">Sender</td>
+                                <td class="py-3 px-3">
+                                    <code class="text-danger fw-bold font-monospace" th:text="${txn.beneficiaryAccount}">VPA</code>
+                                    <div class="small" style="color: var(--app-text-secondary);" th:text="${txn.beneficiaryBankOrVpa}">Bank</div>
                                 </td>
-                                <td>
-                                    <span class="badge" 
-                                          th:classappend="${corr.similarityPercentage >= 90 ? 'bg-danger' : 'bg-warning text-dark'}"
-                                          th:text="${corr.similarityPercentage + '% Match'}">95% Match</span>
+                                <td class="py-3 px-3">
+                                    <span th:if="${txn.velocityTag == 'HIGH_VELOCITY_MULE_ACCOUNT'}" class="badge bg-danger px-2 py-1">HIGH_VELOCITY_MULE</span>
+                                    <span th:if="${txn.velocityTag != 'HIGH_VELOCITY_MULE_ACCOUNT'}" class="badge bg-secondary px-2 py-1">STANDARD</span>
                                 </td>
-                                <td class="text-secondary small" th:text="${corr.explanation}">Explanation</td>
+                                <td class="py-3 px-3">
+                                    <span th:if="${txn.transactionStatus == 'FLAGGED'}" class="badge bg-warning text-dark px-2 py-1">FLAGGED</span>
+                                    <span th:if="${txn.transactionStatus == 'FREEZE_REQUESTED'}" class="badge bg-info text-dark px-2 py-1">FREEZE_REQUESTED</span>
+                                    <span th:if="${txn.transactionStatus == 'FROZEN'}" class="badge bg-success px-2 py-1">FROZEN</span>
+                                    <span th:if="${txn.transactionStatus == 'ESCALATED'}" class="badge bg-danger px-2 py-1">ESCALATED</span>
+                                </td>
+                                <td class="py-3 px-3 text-end">
+                                    <form th:if="${txn.transactionStatus == 'FLAGGED'}" th:action="@{/transactions/{txnId}/freeze(txnId=${txn.id})}" method="post" class="d-inline">
+                                        <input type="hidden" name="complaintId" th:value="${complaint.id}">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm px-3 py-1 fw-semibold">
+                                            <i class="bi bi-shield-x me-1"></i> Simulate 1930 Bank Freeze Notice
+                                        </button>
+                                    </form>
+                                    <span th:if="${txn.transactionStatus != 'FLAGGED'}" class="small text-success fw-bold">
+                                        <i class="bi bi-check-all me-1"></i>Notice Active
+                                    </span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -295,17 +315,64 @@
             </div>
         </div>
 
-        <!-- FEATURE 3: CASE LIFECYCLE MANAGEMENT & CHRONOLOGICAL ACTIVITY LOG -->
+        <!-- ROW 6: RELATED HISTORICAL CASES & PATTERN LINKAGES -->
+        <div class="card shadow-sm border mb-4">
+            <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-diagram-3-fill text-warning me-2"></i>Related Historical Cases &amp; Pattern Linkages
+                    </h5>
+                    <div class="small" style="color: var(--app-text-secondary);">Cross-referenced against master cybercrime intelligence dataset</div>
+                </div>
+                <span class="badge bg-secondary font-monospace px-3 py-2 fs-6" th:text="${#lists.size(correlations) + ' Matches Found'}">0 Matches</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="py-3 px-3">Historical Case ID</th>
+                                <th class="py-3 px-3">Matched Identifier</th>
+                                <th class="py-3 px-3">Similarity Score</th>
+                                <th class="py-3 px-3">Correlation Rationale</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(correlations)}">
+                                <td colspan="4" class="text-center py-4 text-secondary">
+                                    No linked historical cases found for this suspect identifier or narrative.
+                                </td>
+                            </tr>
+                            <tr th:each="corr : ${correlations}">
+                                <td class="py-3 px-3 fw-bold font-monospace text-primary" th:text="${corr.historicalCaseId}">HC-2024-001</td>
+                                <td class="py-3 px-3">
+                                    <code class="text-danger fw-bold font-monospace" th:text="${corr.matchedIdentifier}">Identifier</code>
+                                </td>
+                                <td class="py-3 px-3">
+                                    <span class="badge" 
+                                          th:classappend="${corr.similarityPercentage >= 90 ? 'bg-danger' : 'bg-warning text-dark'}"
+                                          th:text="${corr.similarityPercentage + '% Match'}">95% Match</span>
+                                </td>
+                                <td class="py-3 px-3 small" style="color: var(--app-text-secondary);" th:text="${corr.explanation}">Explanation</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 7: CASE LIFECYCLE MANAGEMENT & CHRONOLOGICAL ACTIVITY LOG -->
         <div class="row g-4 mb-4">
+            <!-- Assignment & State Transition Form -->
             <div class="col-lg-5">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-light fw-bold">
-                        <i class="bi bi-person-gear me-2"></i>Investigation Lifecycle &amp; Assignment
+                <div class="card shadow-sm border h-100">
+                    <div class="card-header py-3 px-4 fw-bold d-flex align-items-center gap-2">
+                        <i class="bi bi-person-gear text-primary fs-5"></i> Investigation Lifecycle &amp; Assignment
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-4">
                         <form th:action="@{/complaints/{id}/status(id=${complaint.id})}" method="post">
                             <div class="mb-3">
-                                <label class="form-label small fw-semibold text-muted">TRANSITION CASE STATUS</label>
+                                <label class="form-label small fw-semibold" style="color: var(--app-text-secondary);">TRANSITION CASE STATUS</label>
                                 <select name="status" class="form-select">
                                     <option value="NEW" th:selected="${complaint.status == 'NEW'}">NEW</option>
                                     <option value="ASSIGNED" th:selected="${complaint.status == 'ASSIGNED'}">ASSIGNED</option>
@@ -315,16 +382,16 @@
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label small fw-semibold text-muted">ASSIGNED INVESTIGATING OFFICER</label>
+                                <label class="form-label small fw-semibold" style="color: var(--app-text-secondary);">ASSIGNED INVESTIGATING OFFICER</label>
                                 <input type="text" name="assignedOfficer" class="form-control" 
                                        th:value="${complaint.assignedOfficer}" placeholder="e.g. Inspector Rajesh Kumar">
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label small fw-semibold text-muted">INVESTIGATION REMARKS / LOG NOTE</label>
-                                <textarea name="remarks" class="form-control" rows="2" 
+                            <div class="mb-4">
+                                <label class="form-label small fw-semibold" style="color: var(--app-text-secondary);">INVESTIGATION REMARKS / LOG NOTE</label>
+                                <textarea name="remarks" class="form-control" rows="3" 
                                           placeholder="Enter case remarks (e.g. Statutory Section 91 CrPC notice dispatched to intermediary bank)..."></textarea>
                             </div>
-                            <button type="submit" class="btn btn-warning w-100 fw-bold text-dark shadow-sm">
+                            <button type="submit" class="btn btn-warning w-100 fw-bold text-dark shadow-sm py-2">
                                 <i class="bi bi-check2-circle me-1"></i> Update Case State &amp; Log Remarks
                             </button>
                         </form>
@@ -332,32 +399,32 @@
                 </div>
             </div>
 
-            <!-- Chronological Investigation Activity Log -->
+            <!-- Chronological Investigation Activity Log Table -->
             <div class="col-lg-7">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-light fw-bold">
-                        <i class="bi bi-journal-text me-2"></i>Chronological Investigation Log &amp; Remarks Trail
+                <div class="card shadow-sm border h-100">
+                    <div class="card-header py-3 px-4 fw-bold d-flex align-items-center gap-2">
+                        <i class="bi bi-journal-text text-primary fs-5"></i> Chronological Investigation Log &amp; Remarks Trail
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
+                                <thead>
                                     <tr>
-                                        <th>Timestamp</th>
-                                        <th>Officer</th>
-                                        <th>Action Taken</th>
-                                        <th>Remarks &amp; Notes</th>
+                                        <th class="py-3 px-3">Timestamp</th>
+                                        <th class="py-3 px-3">Officer</th>
+                                        <th class="py-3 px-3">Action Taken</th>
+                                        <th class="py-3 px-3">Remarks &amp; Notes</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr th:if="${#lists.isEmpty(logs)}">
-                                        <td colspan="4" class="text-center py-3 text-muted">No investigation remarks logged yet.</td>
+                                        <td colspan="4" class="text-center py-4 text-secondary">No investigation remarks logged yet.</td>
                                     </tr>
                                     <tr th:each="log : ${logs}">
-                                        <td class="small text-muted" th:text="${#temporals.format(log.timestamp, 'dd-MMM HH:mm')}">Date</td>
-                                        <td class="fw-semibold small" th:text="${log.officerName}">Officer</td>
-                                        <td><span class="badge bg-secondary" th:text="${log.actionTaken}">Action</span></td>
-                                        <td class="small text-secondary" th:text="${log.notes}">Notes</td>
+                                        <td class="py-3 px-3 small font-monospace" style="color: var(--app-text-secondary);" th:text="${#temporals.format(log.timestamp, 'dd-MMM HH:mm')}">Date</td>
+                                        <td class="py-3 px-3 fw-semibold small" th:text="${log.officerName}">Officer</td>
+                                        <td class="py-3 px-3"><span class="badge bg-secondary font-monospace" th:text="${log.actionTaken}">Action</span></td>
+                                        <td class="py-3 px-3 small" style="color: var(--app-text-secondary);" th:text="${log.notes}">Notes</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -367,7 +434,9 @@
             </div>
         </div>
 
-    </div>
+    </main>
+
+    <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

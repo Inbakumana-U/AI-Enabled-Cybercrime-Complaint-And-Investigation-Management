@@ -111,14 +111,17 @@ public class InvestigationWorkflowService {
             String evType = saved.getSuspectIdentifier().contains("@") ? "TRANSACTION_UTR" :
                     (saved.getSuspectIdentifier().startsWith("http") ? "PHISHING_URL" : "SUSPECT_PHONE");
 
-            evidenceRepository.save(DigitalEvidence.builder()
+            DigitalEvidence initialEv = DigitalEvidence.builder()
+                    .complaint(saved)
                     .complaintId(saved.getId())
                     .evidenceType(evType)
                     .referenceValue(saved.getSuspectIdentifier())
                     .digitalHash(generateSha256(saved.getSuspectIdentifier()))
+                    .sha256Hash(generateSha256(saved.getSuspectIdentifier()))
                     .chainOfCustodyOfficer("System Ingestion Engine")
                     .loggedAt(LocalDateTime.now())
-                    .build());
+                    .build();
+            evidenceRepository.save(initialEv);
 
             // Create initial transaction entry
             String velocity = (saved.getLossAmount() != null && saved.getLossAmount() > 500000.0)
@@ -154,12 +157,15 @@ public class InvestigationWorkflowService {
      */
     @Transactional
     public DigitalEvidence addEvidence(Long complaintId, String evidenceType, String referenceValue, String officerName) {
+        Complaint complaint = complaintRepository.findById(complaintId).orElse(null);
         String hash = generateSha256(referenceValue != null ? referenceValue : "");
         DigitalEvidence evidence = DigitalEvidence.builder()
+                .complaint(complaint)
                 .complaintId(complaintId)
                 .evidenceType(evidenceType)
                 .referenceValue(referenceValue)
                 .digitalHash(hash)
+                .sha256Hash(hash)
                 .chainOfCustodyOfficer(officerName != null && !officerName.isBlank() ? officerName : "Investigating Officer")
                 .loggedAt(LocalDateTime.now())
                 .build();
@@ -261,9 +267,14 @@ public class InvestigationWorkflowService {
     }
 
     public String generateSha256(String input) {
+        if (input == null) return generateSha256(new byte[0]);
+        return generateSha256(input.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String generateSha256(byte[] data) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] encodedhash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            byte[] encodedhash = digest.digest(data != null ? data : new byte[0]);
             StringBuilder hexString = new StringBuilder(2 * encodedhash.length);
             for (byte b : encodedhash) {
                 String hex = Integer.toHexString(0xff & b);
@@ -274,8 +285,51 @@ public class InvestigationWorkflowService {
             }
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            return "HASH-" + Math.abs(input.hashCode());
+            return "HASH-" + (data != null ? Math.abs(java.util.Arrays.hashCode(data)) : 0);
         }
+    }
+
+    /**
+     * Attaches an uploaded multi-part binary file directly to a complaint and stores in PostgreSQL.
+     */
+    @Transactional
+    public DigitalEvidence attachEvidenceFile(Complaint complaint, String originalFilename, String contentType, byte[] fileBytes, String officerName) {
+        String hash = generateSha256(fileBytes);
+        DigitalEvidence evidence = DigitalEvidence.builder()
+                .complaint(complaint)
+                .complaintId(complaint.getId())
+                .fileName(originalFilename != null ? originalFilename : "artifact.bin")
+                .fileType(contentType != null ? contentType : "application/octet-stream")
+                .fileSize(fileBytes != null ? (long) fileBytes.length : 0L)
+                .fileData(fileBytes)
+                .sha256Hash(hash)
+                .digitalHash(hash)
+                .evidenceType("EVIDENTIARY_DOCUMENT")
+                .referenceValue(originalFilename != null ? originalFilename : "BINARY_ARTIFACT")
+                .chainOfCustodyOfficer(officerName != null && !officerName.isBlank() ? officerName : "Complaint Registration Intake")
+                .loggedAt(LocalDateTime.now())
+                .build();
+
+        complaint.addEvidenceFile(evidence);
+        DigitalEvidence saved = evidenceRepository.save(evidence);
+
+        logRepository.save(InvestigationLog.builder()
+                .complaintId(complaint.getId())
+                .officerName(evidence.getChainOfCustodyOfficer())
+                .actionTaken("Binary Evidence File Uploaded")
+                .notes("File: " + evidence.getFileName() + " (" + evidence.getFormattedFileSize() + ") | Type: " + evidence.getFileType() + " | SHA-256: " + hash)
+                .timestamp(LocalDateTime.now())
+                .build());
+
+        return saved;
+    }
+
+    public List<InvestigationAlert> getUnacknowledgedAlerts() {
+        return alertRepository.findByAcknowledgedFalseOrderByCreatedAtDesc();
+    }
+
+    public CyberIntelligenceService getCyberIntelligenceService() {
+        return intelligenceService;
     }
 
     private synchronized String generateComplaintNumber() {

@@ -47,24 +47,79 @@ public class CaseOperationController {
     }
 
     /**
-     * Standalone Complaint Intake Form (or accessed directly)
+     * Standalone Complaint Intake Form redirect
      */
-    @GetMapping("/complaints/register")
-    public String showRegistrationForm(Model model) {
-        model.addAttribute("complaint", new Complaint());
-        model.addAttribute("activePage", "register");
-        return "complaint-register";
+    @InitBinder
+    public void initBinder(org.springframework.web.bind.WebDataBinder binder) {
+        binder.setDisallowedFields("evidenceFiles");
     }
 
     /**
-     * Form Submission: Intake Pipeline
+     * Standalone Complaint Intake Form redirect
      */
-    @PostMapping("/complaints/register")
-    public String registerComplaint(@ModelAttribute Complaint complaint, RedirectAttributes redirectAttributes) {
+    @GetMapping("/complaints/register")
+    public String showRegistrationForm() {
+        return "redirect:/intake";
+    }
+
+    /**
+     * Form Submission: Intake Pipeline with Multi-Part File Upload
+     */
+    @PostMapping(value = "/complaints/register", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public String registerComplaint(@ModelAttribute Complaint complaint,
+                                    @RequestParam(value = "evidenceFiles", required = false) org.springframework.web.multipart.MultipartFile[] files,
+                                    RedirectAttributes redirectAttributes) {
         Complaint saved = workflowService.processNewComplaint(complaint);
-        redirectAttributes.addFlashAttribute("successMessage",
-                "Complaint filed successfully [" + saved.getComplaintNumber() + "] with AI Priority: " + saved.getAiPriority());
+
+        int uploadedCount = 0;
+        if (files != null) {
+            for (org.springframework.web.multipart.MultipartFile file : files) {
+                if (file != null && !file.isEmpty()) {
+                    try {
+                        workflowService.attachEvidenceFile(
+                                saved,
+                                file.getOriginalFilename(),
+                                file.getContentType(),
+                                file.getBytes(),
+                                "Complaint Intake Desk"
+                        );
+                        uploadedCount++;
+                    } catch (java.io.IOException e) {
+                        // Log error and continue
+                        System.err.println("Error processing uploaded evidence file: " + e.getMessage());
+                    }
+                }
+            }
+        }
+
+        String msg = "Complaint filed successfully [" + saved.getComplaintNumber() + "] with AI Priority: " + saved.getAiPriority();
+        if (uploadedCount > 0) {
+            msg += " (" + uploadedCount + " digital evidence file" + (uploadedCount > 1 ? "s" : "") + " secured with Section 65B SHA-256 integrity hashes).";
+        }
+        redirectAttributes.addFlashAttribute("successMessage", msg);
         return "redirect:/complaints/" + saved.getId();
+    }
+
+    /**
+     * File Download / Retrieval REST Endpoint
+     */
+    @GetMapping("/evidence/{evidenceId}/download")
+    public org.springframework.http.ResponseEntity<byte[]> downloadEvidenceFile(@PathVariable("evidenceId") Long evidenceId) {
+        DigitalEvidence evidence = evidenceRepository.findById(evidenceId)
+                .orElseThrow(() -> new IllegalArgumentException("Evidence item not found: " + evidenceId));
+
+        if (evidence.getFileData() == null || evidence.getFileData().length == 0) {
+            return org.springframework.http.ResponseEntity.notFound().build();
+        }
+
+        String fileName = evidence.getFileName() != null ? evidence.getFileName() : "evidence-" + evidence.getId() + ".bin";
+        String contentType = evidence.getFileType() != null ? evidence.getFileType() : org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
+
+        return org.springframework.http.ResponseEntity.ok()
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .header(org.springframework.http.HttpHeaders.CONTENT_TYPE, contentType)
+                .header(org.springframework.http.HttpHeaders.CONTENT_LENGTH, String.valueOf(evidence.getFileData().length))
+                .body(evidence.getFileData());
     }
 
     /**
@@ -137,7 +192,7 @@ public class CaseOperationController {
         if (complaintId != null) {
             return "redirect:/complaints/" + complaintId;
         }
-        return "redirect:/dashboard?tab=cases";
+        return "redirect:/ledger";
     }
 
     /**
@@ -164,6 +219,6 @@ public class CaseOperationController {
             alertRepository.save(alert);
         });
         redirectAttributes.addFlashAttribute("successMessage", "Escalation alert acknowledged by Investigating Officer.");
-        return "redirect:/dashboard";
+        return "redirect:/ledger";
     }
 }

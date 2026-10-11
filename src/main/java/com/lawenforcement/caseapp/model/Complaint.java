@@ -4,10 +4,7 @@ import com.lawenforcement.alert.model.InvestigationAlert;
 import com.lawenforcement.evidence.model.DigitalEvidence;
 import com.lawenforcement.fraud.model.FraudTransaction;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,7 +12,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "complaints")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -63,10 +61,9 @@ public class Complaint {
     @Column(nullable = false)
     private LocalDateTime registeredAt;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "complaintId")
+    @OneToMany(mappedBy = "complaint", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
-    private List<DigitalEvidence> evidenceList = new ArrayList<>();
+    private List<DigitalEvidence> evidenceFiles = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "complaintId")
@@ -91,5 +88,44 @@ public class Complaint {
         if (status == null) {
             status = "NEW";
         }
+    }
+
+    // Helper method to add evidence file cleanly
+    public void addEvidenceFile(DigitalEvidence evidence) {
+        if (evidenceFiles == null) {
+            evidenceFiles = new ArrayList<>();
+        }
+        evidenceFiles.add(evidence);
+        evidence.setComplaint(this);
+    }
+
+    public List<DigitalEvidence> getEvidenceList() {
+        return this.evidenceFiles;
+    }
+
+    public void setEvidenceList(List<DigitalEvidence> list) {
+        this.evidenceFiles = list;
+    }
+
+    // Convenience aliases for backward/forward compatibility
+    public Double getFinancialLoss() {
+        return this.lossAmount;
+    }
+
+    public void setFinancialLoss(Double financialLoss) {
+        this.lossAmount = financialLoss;
+    }
+
+    public String getPriorityLevel() {
+        return this.aiPriority;
+    }
+
+    public void setPriorityLevel(String priorityLevel) {
+        this.aiPriority = priorityLevel;
+    }
+
+    public int getAttachedFileCount() {
+        if (evidenceFiles == null) return 0;
+        return (int) evidenceFiles.stream().filter(DigitalEvidence::isBinaryFile).count();
     }
 }

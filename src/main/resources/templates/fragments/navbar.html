@@ -5,41 +5,139 @@
 </head>
 <body>
     <div th:fragment="navbar">
+        <style>
+            :root[data-bs-theme="dark"] {
+                --app-canvas-bg: #0f172a;
+                --app-surface-bg: #1e293b;
+                --app-surface-secondary: #0f172a;
+                --app-border-color: #334155;
+                --app-text-primary: #f8fafc;
+                --app-text-secondary: #94a3b8;
+            }
+            :root[data-bs-theme="light"] {
+                --app-canvas-bg: #f8fafc;
+                --app-surface-bg: #ffffff;
+                --app-surface-secondary: #f1f5f9;
+                --app-border-color: #e2e8f0;
+                --app-text-primary: #0f172a;
+                --app-text-secondary: #64748b;
+            }
+            body {
+                background-color: var(--app-canvas-bg) !important;
+                color: var(--app-text-primary) !important;
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            }
+            .card {
+                background-color: var(--app-surface-bg) !important;
+                border-color: var(--app-border-color) !important;
+            }
+            .card-header {
+                background-color: var(--app-surface-secondary) !important;
+                border-bottom-color: var(--app-border-color) !important;
+                color: var(--app-text-primary) !important;
+            }
+            .table {
+                --bs-table-bg: var(--app-surface-bg);
+                --bs-table-striped-bg: var(--app-surface-secondary);
+                --bs-table-hover-bg: var(--app-surface-secondary);
+                --bs-table-border-color: var(--app-border-color);
+                color: var(--app-text-primary) !important;
+            }
+            .table thead th {
+                background-color: var(--app-surface-secondary) !important;
+                color: var(--app-text-secondary) !important;
+                border-bottom: 2px solid var(--app-border-color) !important;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .form-control, .form-select, .input-group-text {
+                background-color: var(--app-surface-bg) !important;
+                border-color: var(--app-border-color) !important;
+                color: var(--app-text-primary) !important;
+            }
+            .form-control:focus, .form-select:focus {
+                border-color: #3b82f6 !important;
+                box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25) !important;
+            }
+            .badge-critical { background-color: #dc2626 !important; color: #ffffff !important; }
+            .badge-high { background-color: #f97316 !important; color: #ffffff !important; }
+            .badge-medium { background-color: #0284c7 !important; color: #ffffff !important; }
+            .badge-low { background-color: #64748b !important; color: #ffffff !important; }
+            .kpi-block {
+                border-right: 1px solid var(--app-border-color);
+                padding: 1.25rem 1.75rem;
+            }
+            .kpi-block:last-child {
+                border-right: none;
+            }
+            .ticker-bar {
+                background-color: rgba(220, 38, 38, 0.15);
+                border-bottom: 1px solid rgba(220, 38, 38, 0.3);
+                color: #fca5a5;
+            }
+            .sandbox-panel {
+                border-left: 5px solid #eab308 !important;
+                border-radius: 8px;
+            }
+        </style>
+
         <!-- Natural Scrolling Command Header (No sticky/fixed positioning) -->
-        <header class="border-bottom py-2 px-4 shadow-sm" style="border-bottom: 1px solid var(--bs-border-color) !important;">
-            <div class="container-fluid px-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <header class="py-3 px-4 shadow-sm" style="background-color: var(--app-surface-bg); border-bottom: 1px solid var(--app-border-color);">
+            <div class="container-fluid px-0 d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <!-- Brand / Portal Title -->
                 <div class="d-flex align-items-center gap-3">
-                    <a th:href="@{/dashboard}" class="d-flex align-items-center text-decoration-none">
+                    <a th:href="@{/ledger}" class="d-flex align-items-center text-decoration-none">
                         <span class="badge bg-primary text-uppercase px-2 py-1 me-2 fw-bold">LEO PORTAL</span>
                         <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-shield-shaded text-warning fs-5"></i>
-                            <span class="fw-bold font-monospace text-body" style="letter-spacing: 0.5px;">CYBERCRIME INVESTIGATION &amp; INTELLIGENCE GRID</span>
+                            <i class="bi bi-shield-shaded text-warning fs-4"></i>
+                            <span class="fw-bold font-monospace" style="letter-spacing: 0.5px; color: var(--app-text-primary); font-size: 1.05rem;">
+                                CYBERCRIME INVESTIGATION &amp; INTELLIGENCE GRID
+                            </span>
                         </div>
                     </a>
                 </div>
 
-                <!-- Right-Side Controls: Clock, Theme Mode Toggle, Top-Right Workspace Dropdown -->
-                <div class="d-flex align-items-center gap-2 font-monospace small">
-                    <!-- Live Clocks -->
-                    <span id="navIstClock" class="text-warning d-none d-lg-inline">IST: --:--:--</span>
+                <!-- Right-Side Controls: Clocks, Theme Mode Toggle, Distinct View Select Dropdown -->
+                <div class="d-flex align-items-center gap-3 font-monospace small">
+                    <!-- Status & Clocks -->
+                    <span class="text-success d-none d-md-flex align-items-center gap-1 me-2 fw-semibold">
+                        <span class="spinner-grow spinner-grow-sm text-success" style="width: 0.5rem; height: 0.5rem;"></span>
+                        ONLINE
+                    </span>
+                    <span id="navIstClock" class="text-warning d-none d-lg-inline fw-semibold">IST: --:--:--</span>
                     <span id="navUtcClock" class="text-secondary me-2">UTC: --:--:--</span>
 
                     <!-- Technical Mode Toggle Button -->
-                    <button id="themeModeToggle" class="btn btn-outline-secondary font-monospace small px-2 py-1" type="button" title="Toggle Tactical Theme">
+                    <button id="themeModeToggle" class="btn btn-outline-secondary font-monospace small px-3 py-1" type="button" title="Toggle Full Canvas Theme">
                         <span id="themeModeLabel">[MODE: DARK]</span>
                     </button>
 
                     <!-- Top-Right Workspace Select Dropdown -->
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-2 px-2 py-1" 
+                        <button class="btn btn-outline-primary dropdown-toggle d-flex align-items-center gap-2 px-3 py-1 fw-semibold font-monospace" 
                                 type="button" id="workspaceSelectMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                            <span class="font-monospace small">VIEW SELECT</span>
+                            <span>VIEW SELECT</span>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="workspaceSelectMenu">
-                            <li><a class="dropdown-item py-2" th:href="@{/dashboard#ledgerSection}">1. Active Case Ledger</a></li>
-                            <li><a class="dropdown-item py-2" th:href="@{/dashboard#intakeSection}">2. Register New Complaint</a></li>
-                            <li><a class="dropdown-item py-2" th:href="@{/dashboard#sandboxSection}">3. Intelligence &amp; IoC Sandbox</a></li>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border" style="background-color: var(--app-surface-bg); border-color: var(--app-border-color);" aria-labelledby="workspaceSelectMenu">
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" th:href="@{/ledger}"
+                                   th:classappend="${activeNav == 'ledger' ? 'active fw-bold' : ''}" style="color: var(--app-text-primary);">
+                                    <i class="bi bi-folder2-open text-primary"></i> 1. Active Case Ledger
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" th:href="@{/intake}"
+                                   th:classappend="${activeNav == 'intake' ? 'active fw-bold' : ''}" style="color: var(--app-text-primary);">
+                                    <i class="bi bi-file-earmark-plus text-success"></i> 2. Register New Complaint
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 d-flex align-items-center gap-2" th:href="@{/intelligence}"
+                                   th:classappend="${activeNav == 'intelligence' ? 'active fw-bold' : ''}" style="color: var(--app-text-primary);">
+                                    <i class="bi bi-cpu text-warning"></i> 3. Intelligence &amp; IoC Sandbox
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -61,25 +159,25 @@
                 setInterval(updateNavClock, 1000);
                 updateNavClock();
 
-                // Technical Theme Mode Toggle Logic
-                const themeToggle = document.getElementById('themeModeToggle');
-                const themeLabel = document.getElementById('themeModeLabel');
-                const activeTheme = localStorage.getItem('app-theme') || 'dark';
-
-                document.documentElement.setAttribute('data-bs-theme', activeTheme);
-                if (themeLabel) {
-                    themeLabel.textContent = activeTheme === 'dark' ? '[MODE: DARK]' : '[MODE: LIGHT]';
+                // Theme Initialization & Switcher
+                function applyTheme(theme) {
+                    document.documentElement.setAttribute('data-bs-theme', theme);
+                    const themeLabel = document.getElementById('themeModeLabel');
+                    if (themeLabel) {
+                        themeLabel.textContent = theme === 'dark' ? '[MODE: DARK]' : '[MODE: LIGHT]';
+                    }
                 }
 
+                const savedTheme = localStorage.getItem('app-theme') || 'dark';
+                applyTheme(savedTheme);
+
+                const themeToggle = document.getElementById('themeModeToggle');
                 if (themeToggle) {
                     themeToggle.addEventListener('click', () => {
                         const current = document.documentElement.getAttribute('data-bs-theme') || 'dark';
                         const target = current === 'dark' ? 'light' : 'dark';
-                        document.documentElement.setAttribute('data-bs-theme', target);
                         localStorage.setItem('app-theme', target);
-                        if (themeLabel) {
-                            themeLabel.textContent = target === 'dark' ? '[MODE: DARK]' : '[MODE: LIGHT]';
-                        }
+                        applyTheme(target);
                     });
                 }
             })();
